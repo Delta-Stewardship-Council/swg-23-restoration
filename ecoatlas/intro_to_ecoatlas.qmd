@@ -1,0 +1,770 @@
+---
+title: "Introduction to EcoAtlas REST API"
+author: "Kenji Tomari"
+date: today
+# by default, lets not execute any of the code.
+execute:
+  eval: false
+format:
+  html:
+    number-sections: true
+    embed-resources: true
+    # by default, fold the code chunks.
+    code-fold: true
+    code-summary: "Display code."
+    toc: true
+    toc-location: right
+    toc-depth: 4
+---
+
+## Introduction
+
+### What is REST API?
+
+> "An API, or application programming interface, is a set of rules that define how applications or devices can connect to and communicate with each other. A REST API is an API that conforms to the design principles of the REST, or representational state transfer architectural style. For this reason, REST APIs are sometimes referred to RESTful APIs." ([IBM](https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&cad=rja&uact=8&ved=2ahUKEwjdqIyxuoWCAxVZODQIHSbuCWIQFnoECBoQAw&url=https%3A%2F%2Fwww.ibm.com%2Ftopics%2Frest-apis%23%3A~%3Atext%3Dthe%2520next%2520step-%2CWhat%2520is%2520a%2520REST%2520API%253F%2Crepresentational%2520state%2520transfer%2520architectural%2520style.&usg=AOvVaw0RvExLMZRbZvSAMnz1xJ9-&opi=89978449))
+
+A REST API usually allows four actions: `GET`, `POST`, `PUT`, and `DELETE`. However, given that we're only downloading files from EcoAtlas, we're really only interested in `GET`. 
+
+### Using REST in R
+
+In this document, we rely on the relatively new R package {httr2}. This package owes a lot to previous packages: {httr2} is the second iteration of the original {httr} package, which is a package that helps simplify the commands found in the {curl} package, which is itself a package to help R users access the software [cURL](https://en.wikipedia.org/wiki/CURL) available for the Command Line Interface. In other words, the package we use helps us access cURL, the original software that helps us download files off the internet via script (rather than clicking download). cURL allows use to automate repetitive downloading tasks.
+
+### Navigating EcoAtlas' API
+
+The documentation for EcoAtlas' (EA) API is [here](https://api.ecoatlas.org). They offer different "routes" for accessing "Habitat Projects". Each route allows access to a different type of information. We go through these with examples below in @sec-routes.
+
+## Code Setup
+
+```{r}
+#| code-summary: Loads libraries.
+#| message: false
+#| eval: true
+
+# wrangling data
+library(tidyverse)
+# wrangling spatial data
+library(sf)
+# accessing REST API
+# https://httr2.r-lib.org
+library(httr2)
+# data format wrangling
+library(jsonlite)
+# for basemap from google
+# library(ggmap)
+# for pretty html tables
+library(kableExtra)
+```
+
+```{r}
+#| code-summary: Creates file paths (as R objects), and creates new directories when needed.
+#| eval: true
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Creates file.paths.
+# home directory: swg-23-restoration
+path_to_home <- getwd() %>%
+  str_extract(., "(.+)((swg-23-restoration(?=\\/))|(swg-23-restoration$))")
+
+path_to_data <- file.path(path_to_home, "data")
+
+path_to_ecodata <- file.path(path_to_data, "ecoatlas")
+
+path_to_details <- file.path(path_to_ecodata, "project_details")
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Create directories.
+# Make sure all the paths exist
+if(!dir.exists(path_to_data)){
+  print("Creating path to data.")
+  dir.create(path_to_data)
+}
+
+if(!dir.exists(path_to_ecodata)){
+  print("Creating path to ecoatlas data.")
+  dir.create(path_to_ecodata)
+}
+
+if(!dir.exists(path_to_details)){
+  print("Creating path to ecoatlas project details data.")
+  dir.create(path_to_details)
+}
+```
+
+## Coding Style & Shorthands
+
+In this document, I write some code in a specific way to automate and standardize certain processes, and I take advantage of certain packages to speed up writing code.
+
+1. I take advantage of [regular expressions](https://r4ds.hadley.nz/regexps) to figure out where on your machine this document lives. I access the path to this environment using `getwd`, and then I use `str_extract` from the {stringr} package to extract the path to the home folder, which in this case should be the same name as the github repository.
+
+2. I use the `str_glue` to paste in text in certain places. For more information, check out Hadley Wickham's [book](https://r4ds.hadley.nz/strings.html#sec-glue).
+
+3. Wherever possible I make use of writing data (that we've downloaded) to local storage so that we don't have to keep making requests to EcoAtlas' servers. In doing this, I make use of both the first and second coding styles above. 
+
+## EcoAtlas API Possible Routes {#sec-routes}
+
+The API has five possible routes which are discussed below. Essentially, each route give us different types of information. Route 1 gives us information on what kinds of searches we can do, Routes 2-4 give us project names, and the final Route gives us detailed information on a specific project.
+
+### Route: Regions
+
+:::{.callout-note title="tl;dr"}
+In general, this "route" is not that important as we'll be working with a particular set of regions that I will discuss in following sections.
+:::
+
+EcoAtlas categorizes projects by four region types, and the API allows for a request of the sub-categories of the four major types. At the time of this writing, EA accepts these region types: `ecoregion`, `waterboard`, `adminregion`, and `group`. This request returns data in a [JSON format](https://en.wikipedia.org/wiki/JSON), which is sort of like an R list object. 
+
+For example, we might be concerned about projects listed by an ecological region like the Bay Area and the Delta. In order to access the projects in this region, we'll need a search key for it. By downloading the region_type_key for `ecoregion` (which is what happens in this section), we discover that the `bay-delta` key is the query we would like to do later.
+
+```{r}
+#| code-summary: This code demonstrates running a request for one region type.
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Pick region
+region_type_key <- "adminregion"
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Build request.
+# (This only designs our request.)
+req <- str_glue("api.ecoatlas.org/{region_type_key}") %>%
+  # design request
+  httr2::request(.) %>%
+  # Add your identifier in case your code causes problems
+  req_user_agent("NCEAS Restoration Group") %>%
+  # set max number of attempts in case it fails
+  req_retry(max_tries = 3)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Run the GET command.
+# (This actually connects to the website.)
+resp <- req_perform(req)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Extract JSON object (as a list)
+# (This only derives information stored in `resp`.)
+resp_json <- resp %>%
+  resp_body_json()
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Store this JSON object for later use.
+# First create the path to the file to which we will save it.
+path_to_json <- str_glue("region_type_key_{region_type_key}.json") %>%
+  file.path(path_to_ecodata, .)
+
+write_json(x = resp_json,
+           path = path_to_json)
+```
+
+For the sake of saving time, we'll iterate through all the four major region types to get our JSON objects. I'll write these to storage now.
+
+```{r}
+#| code-summary: Iterative downloading of region type JSON lists.
+# We use `walk` because we don't want to return anything. We just want the
+# side-effect, ie. writing to file.
+walk(.x = c("ecoregion", 
+            "waterboard", 
+            "adminregion",
+            "group"),
+     .f = function(region_type_key){
+       # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       # Build request.
+       # (This only designs our request.)
+       req <- str_glue("api.ecoatlas.org/{region_type_key}") %>%
+         # design request
+         httr2::request(.) %>%
+         # set max number of attempts in case it fails
+         req_retry(max_tries = 3)
+       
+       # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       # Run the GET command.
+       # (This actually connects to the website.)
+       resp <- req_perform(req)
+       
+       # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       # Extract JSON object (as a list)
+       # (This only derives information stored in `resp`.)
+       resp_json <- resp %>%
+         resp_body_json()
+       
+       # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       # Store this JSON object for later use.
+       # First create the path to the file to which we will save it.
+       path_to_json <- str_glue("region_type_key_{region_type_key}.json") %>%
+         file.path(path_to_ecodata, .)
+       
+       write_json(x = resp_json,
+                  path = path_to_json)
+     })
+```
+
+```{r}
+#| code-summary: Reading the saved json files, convert to tibble, write csv.
+
+# get file list.
+ecofl <- list.files(path_to_ecodata)
+  
+# Iteratively load files to R object
+region_type_keys <- map(
+  # Input
+  .x = ecofl[str_which(ecofl, "^region_type_key.+\\.json$")],
+  # Function
+  .f = function(x){
+    read_json(file.path(path_to_ecodata, x))
+  })
+
+# For sake of convenience, convert these lists to a tibble.
+region_type_keys_tb <- map_dfr(region_type_keys, function(y){
+  TypeKey <- y$regionTypeKey %>% unlist() %>% as.character()
+  TypeName <- y$regionTypeName %>% unlist() %>% as.character()
+  map_dfr(y$regions, function(x){
+    tibble(
+      TypeKey = TypeKey,
+      TypeName = TypeName,
+      key = x$key %>% unlist() %>% as.character(),
+      name = x$name %>% unlist() %>% as.character()
+    )
+  })
+})
+
+write_csv(x = region_type_keys_tb,
+          file = file.path(path_to_ecodata, "region_type_keys.csv"))
+```
+
+```{r}
+#| code-summary: Simply read csv of region types key.
+#| message: false
+
+region_type_keys_tb <- read_csv(file.path(path_to_ecodata, "region_type_keys.csv"))
+```
+
+### Route: Projects in Specified Region
+
+Provides a list of all projects within the specified region. The returned JSON object contains a list of project ID's and names. For example, 5889 Denverton Legacy Project. It does not provide further details.
+
+```{r}
+#| code-summary: This code demonstrates running a request for projects of a specific region. Additionally it stores a JSON and csv.
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Pick region type and region
+region_type_key <- "ecoregion"
+region_key <- "bay-delta"
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Build request.
+# (This only designs our request.)
+req <- str_glue(
+  "api.ecoatlas.org/projects/{region_type_key}/{region_key}"
+  ) %>%
+  # design request
+  httr2::request(.) %>%
+  # Add your identifier in case your code causes problems
+  req_user_agent("NCEAS Restoration Group") %>%
+  # set max number of attempts in case it fails
+  req_retry(max_tries = 3)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Run the GET command.
+# (This actually connects to the website.)
+resp <- req_perform(req,
+                    # verbosity simply gives us updates as it goes.
+                    verbosity = 1)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Extract JSON object (as a list)
+# (This only derives information stored in `resp`.)
+resp_json <- resp %>%
+  resp_body_json()
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Store this JSON object for later use.
+# First create the path to the file to which we will save it.
+path_to_json <- str_glue("projects_{region_type_key}_{region_key}.json") %>%
+  file.path(path_to_ecodata, .)
+
+write_json(x = resp_json,
+           path = path_to_json)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Convert JSON to tibble
+resp_tb <- map_dfr(resp_json$projects, function(x){
+  tibble(
+    TypeKey = resp_json$regionTypeKey,
+    TypeName = resp_json$regionTypeName,
+    Key = resp_json$regionKey,
+    projectid = x$projectid %>% unlist(),
+    projectname = x$projectname %>% unlist()
+  )
+})
+
+path_to_csv <- str_glue("projects_{region_type_key}_{region_key}.csv") %>%
+  file.path(path_to_ecodata, .)
+
+write_csv(
+  x = resp_tb,
+  file = path_to_csv
+)
+```
+
+### Route: Projects in Specified Group
+
+Provides a list of projects by group, rather than by region. The groups seem more bespoke and specific, sometimes tied to a piece of legislation.
+
+> You may search for projects within a group via a URI parameter to search by group name. This allows searches via proper strings (e.g. with whitespace). Special characters will be replaced with a character wildcard.
+
+Returns a JSON object.
+
+```{r}
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Pick group
+group_name <- 66
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Build request.
+# (This only designs our request.)
+req <- str_glue(
+  "api.ecoatlas.org/projects/group/?q={group_name}"
+  ) %>%
+  # design request
+  httr2::request(.) %>%
+  # Add your identifier in case your code causes problems
+  req_user_agent("NCEAS Restoration Group") %>%
+  # set max number of attempts in case it fails
+  req_retry(max_tries = 3)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Run the GET command.
+# (This actually connects to the website.)
+resp <- req_perform(req,
+                    # verbosity simply gives us updates as it goes.
+                    verbosity = 1)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Extract JSON object (as a list)
+# (This only derives information stored in `resp`.)
+resp_json <- resp %>%
+  resp_body_json()
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Store this JSON object for later use.
+# First create the path to the file to which we will save it.
+path_to_json <- str_glue("projects_group_{group_name}.json") %>%
+  file.path(path_to_ecodata, .)
+
+write_json(x = resp_json,
+           path = path_to_json)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Convert JSON to tibble
+resp_tb <- map_dfr(resp_json$projects, function(x){
+  tibble(
+    TypeKey = resp_json$regionTypeKey,
+    TypeName = resp_json$regionTypeName,
+    Key = resp_json$regionKey,
+    projectid = x$projectid %>% unlist(),
+    projectname = x$projectname %>% unlist()
+  )
+})
+
+path_to_csv <- str_glue("projects_group_{group_name}.csv") %>%
+  file.path(path_to_ecodata, .)
+
+write_csv(
+  x = resp_tb,
+  file = path_to_csv
+)
+```
+
+### Route: All Projects
+
+:::{.callout-note}
+This particular code doesn't need to be executed if you have a sense of what you need based on the *region* or *group* in which you're interested. I have not tested the code chunk below because it is redundant with Routes 2 and 3.
+:::
+
+Provides a list of all habitat projects. Returns a JSON object.
+
+```{r}
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Build request.
+# (This only designs our request.)
+req <- httr2::request("api.ecoatlas.org/projects") %>%
+  # Add your identifier in case your code causes problems
+  req_user_agent("NCEAS Restoration Group") %>%
+  # set max number of attempts in case it fails
+  req_retry(max_tries = 3)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Run the GET command.
+# (This actually connects to the website.)
+resp <- req_perform(req,
+                    # verbosity simply gives us updates as it goes.
+                    verbosity = 1)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Extract JSON object (as a list)
+# (This only derives information stored in `resp`.)
+resp_json <- resp %>%
+  resp_body_json()
+```
+
+### Route: Get Detailed Project Information by ID
+
+Provides details on the project specified by the Project ID. This returns a JSON object.
+
+```{r}
+#| code-summary: Download project details by project ID.
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Pick project ID
+projectid <- "9522"
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Build request.
+# (This only designs our request.)
+req <- str_glue(
+  "api.ecoatlas.org/project/{projectid}"
+  ) %>%
+  # design request
+  httr2::request(.) %>%
+  # Add your identifier in case your code causes problems
+  req_user_agent("NCEAS Restoration Group") %>%
+  # set max number of attempts in case it fails
+  req_retry(max_tries = 3)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Run the GET command.
+# (This actually connects to the website.)
+resp <- req_perform(req,
+                    # verbosity simply gives us updates as it goes.
+                    verbosity = 1)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Extract JSON object (as a list)
+# (This only derives information stored in `resp`.)
+resp_json <- resp %>%
+  resp_body_json()
+```
+
+
+## Example Project SSJDC Prop-1-1605
+
+This is the sample project provided to us by Dr. Rachel Wigginton of the Sacramento-San Joaquin Delta Conservancy on October 11, 2023 at 1:42pm Pacific via email.
+
+:::{.callout-note}
+The internal SSJDC project ID (1605) does not correspond to EcoAtlas' project ID.
+:::
+
+Below, I load the spatial data just to give us a sense of what attributes are included. 
+
+```{r}
+#| eval: true
+# Load in data from Dr. Wigginton
+sample <- st_read(file.path(path_to_data, "Prop1_1605/Prop1_1605.shp"))
+sample %>%
+  head() %>%
+  kbl()
+```
+
+Download project ID's for the Prop 1 "group" on EcoAtlas. This will only provide us a list of project ID's and project names.
+
+```{r}
+#| code-summary: This chunk executes Route 3 above, for Group 66.
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Pick region
+group_name <- 66
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Build request.
+# (This only designs our request.)
+req <- str_glue(
+  "api.ecoatlas.org/projects/group/?q={group_name}"
+  ) %>%
+  # design request
+  httr2::request(.) %>%
+  # Add your identifier in case your code causes problems
+  req_user_agent("NCEAS Restoration Group") %>%
+  # set max number of attempts in case it fails
+  req_retry(max_tries = 3)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Run the GET command.
+# (This actually connects to the website.)
+resp <- req_perform(req,
+                    # verbosity simply gives us updates as it goes.
+                    verbosity = 1)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Extract JSON object (as a list)
+# (This only derives information stored in `resp`.)
+resp_json <- resp %>%
+  resp_body_json()
+
+group66 <- map_dfr(resp_json$projects, function(x){
+  tibble(
+    TypeKey = resp_json$regionTypeKey,
+    TypeName = resp_json$regionTypeName,
+    Key = resp_json$regionKey,
+    projectid = x$projectid %>% unlist(),
+    projectname = x$projectname %>% unlist()
+  )
+})
+```
+
+```{r}
+#| code-summary: Since we already downloaded the data, here we load it.
+#| message: false
+#| eval: true
+group66 <- read_csv(
+  file.path(path_to_ecodata, "projects_group_66.csv")
+)
+
+group66 %>%
+  kbl() %>%
+  scroll_box(height = "600px")
+```
+
+Based on the table above, we want the Petersen Ranch project. In this case, I had to inspect the title from the original proposal and match it manually with this table. 
+
+:::{.callout-note}
+As of this writing, we would most likely have to build a table with a key ID for the spatial data set or any other data set from the proposal, and then a matching pair ID from the EcoAtlas data set. In this case, something like:
+
+```{r}
+tibble(
+  proposalID = "SSJDC1605",
+  ecoatlasID = "9522"
+)
+```
+:::
+
+Now, let's download the project details
+
+```{r}
+#| code-summary: Download the detailed information on project 9522.
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Pick project ID
+projectid <- "9522"
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Build request.
+# (This only designs our request.)
+req <- str_glue(
+  "api.ecoatlas.org/project/{projectid}"
+  ) %>%
+  # design request
+  httr2::request(.) %>%
+  # Add your identifier in case your code causes problems
+  req_user_agent("NCEAS Restoration Group") %>%
+  # set max number of attempts in case it fails
+  req_retry(max_tries = 3)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Run the GET command.
+# (This actually connects to the website.)
+resp <- req_perform(req,
+                    # verbosity simply gives us updates as it goes.
+                    verbosity = 1)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Extract JSON object (as a list)
+# (This only derives information stored in `resp`.)
+resp_json <- resp %>%
+  resp_body_json()
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Store this JSON object for later use.
+# First create the path to the file to which we will save it.
+path_to_json <- str_glue("proj_details_{projectid}.json") %>%
+  file.path(path_to_details, .)
+
+write_json(x = resp_json,
+           path = path_to_json)
+```
+
+Now that we've downloaded the JSON file, let's convert it to a tibble. Note, many attributes have a definition listed [here](https://api.ecoatlas.org/#definitions).
+
+```{r}
+#| eval: true
+#| code-summary: Load JSON file and convert it to tibble.
+
+p <- read_json(file.path(path_to_details, "proj_details_9522.json"))
+```
+
+## Unfinished Code
+
+This section needs to be completed. Here's what's left to do: take the converted list object of multiple tibbles, and convert it to a few aggregated tibbles. Then these should be saved to a few different csv files. Alternatively, save to a sqlite object.
+
+---
+
+Due to the complexity of the JSON object, below I create custom functions to handle the conversion of this object into a properly structured tibble. The first chunk below are helper functions, and the second chunk actually creates a single tibble object.
+
+```{r}
+#| code-summary: Helper functions to handle all the complicated items in this JSON list.
+
+#' Converts a list into a tibble. This only works if there are no sublist elements.
+#' @param list_ is a list object which contains only vectorizable elements.
+fn_convert_layer_to_tb <- function(list_){
+  tb <- map2_dfc(list_, names(list_), function(x, nm){
+    y <- unlist(x)
+    if(is.null(y)){
+      y <- as.character(NA)
+    }
+    tibble(
+      !!sym(nm) := y %>% as.character()
+    )
+  })
+  # return
+  tb
+}
+
+#' Takes a list and asseses whether it has sub lists or not.
+#' @param list_ is a list object.
+#' @return a tibble or a single value (NA or NULL)
+fn_assess <- function(list_){
+  # If this isn't a list, or it has no elements, return NULL
+  if(
+    !(class(list_) %in% "list") |
+    length(list_) == 0
+  ){
+    return(NULL)
+  }
+  
+  # If there are no names in this list, return NA
+  if(is.null(names(list_))){
+    return(NA)
+  }
+
+  map2_dfr(
+    .x = list_, 
+    .y = names(list_), 
+    .f = function(x, nm){
+      # Is this element a list object?
+      islist <- is.list(x)
+      
+      # Create default values for output
+      element_len <- as.numeric(NA)
+      has.sub.list <- as.logical(NA)
+      
+      # IF-1
+      if(islist){
+        # Is a list so,
+        # get length
+        element_len <- length(x)
+        
+        # IF-1.1
+        if(element_len > 0){
+          # Has content so,
+          yvec <- map_vec(x, function(y){
+            islisty <- is.list(y)
+          })
+          
+          # Does it have sub lists?
+          has.sub.list <- T %in% yvec
+          
+        }  # End of IF-1.1
+      } # End of IF-1
+      
+      # Convert this into a tibble
+      tb <- tibble(
+        nm = nm,
+        islist = islist,
+        element_len = element_len,
+        has.sub.list = has.sub.list
+      )
+      
+      # Return
+      tb
+    })  # end map assessment
+}
+
+#' Converts a list object into a list of tibbles.
+#' @param list_ is the main list object that has several dependent lists.
+#' @return a list object of tibbles.
+fn_convert1 <- function(list_){
+  # Assess if this list has other sublists present.
+  assessment <- fn_assess(list_)
+  
+  if(length(assessment) == 1){
+    if(is.null(assessment)){
+      stop("Object supplied is not a list!")
+    }
+    
+    # If its NA, then we know this list has only sublists
+    if(is.na(assessment)){
+      return(
+        map(.x = list_, ~fn_convert1(.x))
+      )
+    }
+  }
+  
+  # Check to see if there are sub lists present
+  sub.lists <- assessment %>%
+    filter(has.sub.list == T)
+  
+  if(nrow(sub.lists) != 0){
+    # run this function over each element of this new list of sublists.
+    out <- map2(.x = list_[sub.lists$nm], 
+                .y = sub.lists$nm,
+                .f = function(x, nm){
+                  fn_convert1(x)
+                }) %>%
+      set_names(sub.lists$nm)
+    
+    # Turn other elements into a tibble.
+    other_elements <- assessment %>%
+      filter(is.na(has.sub.list) | has.sub.list == F)
+    
+    if(nrow(other_elements) > 0){
+      other_elements <- list_[other_elements$nm]
+      
+      other_elements <- fn_convert_layer_to_tb(other_elements)
+      
+      out <- append(out, list(other = other_elements))
+    }
+      
+  } else {
+    out <- fn_convert_layer_to_tb(list_)
+  }
+  
+  # Return
+  out
+}
+```
+
+Now, convert this list of tibbles to a single tibble.
+
+:::{.callout-note}
+The reason this processing of the JSON file is split into two chunks is that the first chunk generically converts list children into tibbles, while the second chunk is bespoke to this output only. In other words, I haven't tested this code on other projects, so I can't assume this works universally.
+:::
+
+```{r}
+#| code-summary: Create a single tibble from this complicated list.
+p2 <- fn_convert1(p)
+
+names(p2)
+```
+
+
+
+```{r}
+p2$sites[[1]]$other
+p2$sites[[1]]$activities$activity
+p2$sites[[1]]$site
+```
+
+
+```{r}
+# Good as is.
+p2$project
+
+# Good as is.
+p2$counties[[1]]
+
+p2$alternateids[[1]]
+
+p2$groups[[1]]
+
+p2$contacts[[1]]
+
+p2$projectevents %>%
+  bind_rows()
+```
+
+```{r}
+
+```
+
