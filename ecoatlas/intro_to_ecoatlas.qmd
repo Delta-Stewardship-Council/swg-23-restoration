@@ -51,6 +51,7 @@ library(httr2)
 library(jsonlite)
 # for basemap from google
 # library(ggmap)
+library(tmap)
 # for pretty html tables
 library(kableExtra)
 # OS-independent approach to zipping files
@@ -454,9 +455,16 @@ Below, I load the spatial data just to give us a sense of what attributes are in
 
 ```{r}
 #| eval: true
+#| message: false
 # Load in data from Dr. Wigginton
-sample <- st_read(file.path(path_to_data, "Prop1_1605/Prop1_1605.shp"))
-sample %>%
+p1605 <- st_read(file.path(path_to_data, "Prop1_1605/Prop1_1605.shp"))
+
+# convert to a California CRS
+p1605 <- p1605 %>%
+  st_transform(3310)
+
+p1605 %>%
+  st_set_geometry(NULL) %>%
   head() %>%
   kbl()
 ```
@@ -962,4 +970,95 @@ zip::zipr(
   mode = "mirror")
 ```
 
+### Spatial Data
+
+If we want to compare the EcoAtlas data to the spatial data set provided to use from SSJDC, we need to have a key-pair that connects these two data sets. There are none in the attribute tables, so we can do this using a spatial join instead.
+
+:::{.callout-note}
+In this document, we already know these two datasets are a pair, but in this section, we're assuming we have several data sets we want to match up.
+:::
+
+#### Extract EA Spatial Data
+
+```{r}
+#| eval: true
+# retrieve spatial data from the JSON object.
+ea9522_sf <- p$sites[[1]]$site %>%
+  map_dfc(., function(x){
+  x %>%
+    unlist()
+}) %>%
+  st_as_sf(wkt = "geom")
+```
+
+```{r}
+#| eval: true
+#| code-summary: Code for a quick map.
+tmap_mode("view")
+tm_shape(ea9522_sf) +
+  tm_polygons()
+```
+
+#### Spatial Join
+
+The most basic way to combine the attribute information from the SSJDC data set to the EcoAtlas data set would be to do a spatial join using `st_join`. The drawback to this approach is that this assumes complete parity between both geometries.
+
+```{r}
+#| eval: true
+#| code-summary: Basic spatial join as an example only.
+# note both objects are CRS EPSG 3310
+ea9522_sf %>%
+  st_join(p1605) %>%
+  kbl()
+```
+
+#### Spatial Join: Centroid Method
+
+If we want to do a join with with some level of flexibility, we can build a key-pair using centroids. First, we want to combine all the polygons of each data set into one, find the centroid, and add a buffer. Then, we want to modify the datasets so there is just a project id column.
+
+```{r}
+#| eval: true
+#| code-summary: Obtain centroids, create buffers around centroids, and attach project ID to each object.
+ea9522_sf_id <- ea9522_sf %>%
+  st_union() %>%
+  st_as_sf() %>%
+  st_centroid() %>%
+  # we know the units are meters because of the CRS
+  st_buffer(dist = 500) %>%
+  mutate(projectid.ea = "9552") %>%
+  select(projectid.ea)
+
+p1605_id <- p1605 %>%
+  st_union() %>%
+  st_as_sf() %>%
+  st_centroid() %>%
+  # we know the units are meters because of the CRS
+  st_buffer(dist = 500) %>%
+  mutate(projectid.ssjdc = "1605") %>%
+  select(projectid.ssjdc)
+
+```
+
+```{r}
+#| eval: true
+#| code-summary: Code for a quick map.
+# Map showing the new buffered centroid
+tmap_mode("view")
+tm_shape(ea9522_sf_id) +
+  tm_polygons()
+```
+
+
+Now we can do a spatial join, and build this key.
+
+```{r}
+#| eval: true
+#| code-summary: Build key to match data sets.
+key <- ea9522_sf_id %>%
+  st_join(p1605_id) %>%
+  st_set_geometry(NULL)
+
+key %>%
+  kbl()
+```
 
