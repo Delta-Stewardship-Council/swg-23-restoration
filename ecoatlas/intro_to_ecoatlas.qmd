@@ -993,6 +993,7 @@ ea9522_sf <- p$sites[[1]]$site %>%
 
 ```{r}
 #| eval: true
+#| message: false
 #| code-summary: Code for a quick map.
 tmap_mode("view")
 tm_shape(ea9522_sf) +
@@ -1041,6 +1042,7 @@ p1605_id <- p1605 %>%
 
 ```{r}
 #| eval: true
+#| message: false
 #| code-summary: Code for a quick map.
 # Map showing the new buffered centroid
 tmap_mode("view")
