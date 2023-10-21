@@ -33,7 +33,6 @@ docs/
 po/*~
 # RStudio Connect folder
 rsconnect/
-
 # CUSTOM
 swg-23-restoration.Rproj
 .DS_Store
