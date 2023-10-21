@@ -461,6 +461,8 @@ sample %>%
   kbl()
 ```
 
+### Download Project Listing from EcoAtlas
+
 Download project ID's for the Prop 1 "group" on EcoAtlas. This will only provide us a list of project ID's and project names.
 
 ```{r}
@@ -520,7 +522,7 @@ group66 %>%
   scroll_box(height = "600px")
 ```
 
-Based on the table above, we want the Petersen Ranch project. In this case, I had to inspect the title from the original proposal and match it manually with this table. 
+Based on the table above, we want project 9522 (the Peterson Ranch project). In this case, I had to inspect the title from the original proposal and match it manually with this table. 
 
 :::{.callout-note}
 As of this writing, we would most likely have to build a table with a key ID for the spatial data set or any other data set from the proposal, and then a matching pair ID from the EcoAtlas data set. In this case, something like:
@@ -528,11 +530,13 @@ As of this writing, we would most likely have to build a table with a key ID for
 ```{r}
 #| code-fold: false
 tibble(
-  proposalID = "SSJDC1605",
+  proposalID = "1605",
   ecoatlasID = "9522"
 )
 ```
 :::
+
+### Download Project 9522 Details
 
 Now, let's download the project details
 
@@ -586,6 +590,8 @@ Now that we've downloaded the JSON file, let's convert it to a tibble. Note, man
 
 p <- read_json(file.path(path_to_details, "proj_details_9522.json"))
 ```
+
+### Convert JSON to CSVs (Optional)
 
 Due to the complexity of the JSON object, below I create custom functions to handle the conversion of this object into a less convoluted structure. The first chunk below are helper functions, and the remaining chunks actually create and export the files.
 
