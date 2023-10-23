@@ -103,6 +103,12 @@ d <- contract  %>%
   ggtitle("Fully Executed")
 
 
-ggarrange(a, b, c, d + rremove("x.text"),
+ggarrange(a, b, c, d,
           labels = c("A", "B", "C", "D"),
           ncol = 2, nrow = 2)
+
+# look for benefit
+staff_rec %>%
+  filter(word == "benefit" | word == "benefits" | word == "beneficial")
+
+# proposal is highest (53), then staff rec (12), contract (5) and report (1)
