@@ -36,7 +36,7 @@ check <- tidy_stop_num_words %>%
   count(word, sort = TRUE)
 
 check  %>%
-  filter(n > 50) %>%
+  filter(n > 100) %>%
   mutate(word = reorder(word, n)) %>%
   ggplot(aes(word, n)) +
   geom_col(fill = "darkred") +
@@ -112,3 +112,70 @@ staff_rec %>%
   filter(word == "benefit" | word == "benefits" | word == "beneficial")
 
 # proposal is highest (53), then staff rec (12), contract (5) and report (1)
+
+# cdfw example
+
+monitor <- tidy_stop_num_words %>%
+  filter(doc_id == "P1596027FinalAnnualMonitoringReport.pdf") %>%
+  count(word, sort = TRUE) # 2749
+
+cdfw_proposal <- tidy_stop_num_words %>%
+  filter(doc_id == "P1596027-Proposal.pdf") %>%
+  count(word, sort = TRUE) # 2633
+
+final_report <- tidy_stop_num_words %>%
+  filter(doc_id == "P1596027-FinalGrantReport-2020-0420.pdf") %>%
+  count(word, sort = TRUE) # 1123
+
+agreement <- tidy_stop_num_words %>%
+  filter(doc_id == "P1596027_GrantAgreement-2016-0630.pdf") %>%
+  count(word, sort = TRUE) # 1662
+
+e <- monitor  %>%
+  filter(n > 40) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(word, n)) +
+  geom_col(fill = "pink") +
+  xlab(NULL) +
+  ylab("Word Count") +
+  coord_flip() +
+  ggtitle("Monitoring Report")
+
+f <- cdfw_proposal  %>%
+  filter(n > 40) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(word, n)) +
+  geom_col(fill = "lightblue") +
+  xlab(NULL) +
+  ylab("Word Count") +
+  coord_flip() +
+  ggtitle("Proposal")
+
+g <- final_report  %>%
+  filter(n > 20) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(word, n)) +
+  geom_col(fill = "lightgreen") +
+  xlab(NULL) +
+  ylab("Word Count") +
+  coord_flip() +
+  ggtitle("Final Grant Report")
+
+h <- agreement  %>%
+  filter(n > 20) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(word, n)) +
+  geom_col(fill = "#FFC073") +
+  xlab(NULL) +
+  ylab("Word Count") +
+  coord_flip() +
+  ggtitle("Grant Agreement")
+
+ggarrange(e, f, g, h,
+          labels = c("A", "B", "C", "D"),
+          ncol = 2, nrow = 2)
+
+agreement %>%
+  filter(word == "benefit" | word == "benefits" | word == "beneficial")
+
+# monitor (1), cdfw_proposal (27), final_report (6), agreement (6, 1 typo)
