@@ -112,6 +112,7 @@ staff_rec %>%
   filter(word == "benefit" | word == "benefits" | word == "beneficial")
 
 # proposal is highest (53), then staff rec (12), contract (5) and report (1)
+<<<<<<< HEAD
 
 # cdfw example
 
@@ -179,3 +180,5 @@ agreement %>%
   filter(word == "benefit" | word == "benefits" | word == "beneficial")
 
 # monitor (1), cdfw_proposal (27), final_report (6), agreement (6, 1 typo)
+=======
+>>>>>>> 3ab8d636992896343ff00a8b97d6a65fe37cb33a
