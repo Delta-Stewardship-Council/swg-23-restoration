@@ -42,3 +42,7 @@ swg-23-restoration.Rproj
 DS_Store
 /data
 **.html
+
+#Ignoring PDF folder as added to GitIgnore
+/data_pdfs
+
