@@ -1,0 +1,84 @@
+---
+title: "EcoAtlas Downloads"
+author: "Kenji Tomari"
+date: today
+# by default, lets not execute any of the code.
+execute:
+  eval: false
+format:
+  html:
+    number-sections: true
+    embed-resources: true
+    # by default, fold the code chunks.
+    code-fold: true
+    code-summary: "Display code."
+    toc: true
+    toc-location: right
+    toc-depth: 4
+---
+
+```{r}
+#| message: false
+# wrangling data
+library(tidyverse)
+# wrangling spatial data
+library(sf)
+# accessing REST API
+# https://httr2.r-lib.org
+library(httr2)
+# data format wrangling
+library(jsonlite)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Creates file.paths.
+# home directory: swg-23-restoration
+path_to_home <- getwd() %>%
+  str_extract(., "(.+)((swg-23-restoration(?=\\/))|(swg-23-restoration$))")
+
+path_to_data <- file.path(path_to_home, "data")
+
+path_to_ecodata <- file.path(path_to_data, "ecoatlas")
+
+path_to_details <- file.path(path_to_ecodata, "project_details")
+```
+
+## Prop 1 - SSJDC
+
+```{r}
+ssjdc <- read_csv(file.path(path_to_ecodata, "projects_group_66.csv"))
+
+json_l <- list()
+
+for(projectid in ssjdc$projectid){
+  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # Build request.
+  # (This only designs our request.)
+  req <- str_glue(
+    "api.ecoatlas.org/project/{projectid}"
+  ) %>%
+    # design request
+    httr2::request(.) %>%
+    # Add your identifier in case your code causes problems
+    req_user_agent("NCEAS Restoration Group") %>%
+    # set max number of attempts in case it fails
+    req_retry(max_tries = 3)
+  
+  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # Run the GET command.
+  # (This actually connects to the website.)
+  resp <- req_perform(req,
+                      # verbosity simply gives us updates as it goes.
+                      verbosity = 1)
+  
+  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # Extract JSON object (as a list)
+  # (This only derives information stored in `resp`.)
+  json_l[[projectid]] <- resp %>%
+    resp_body_json()
+}
+```
+
+```{r}
+json_l
+```
+
