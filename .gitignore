@@ -33,7 +33,6 @@ docs/
 po/*~
 # RStudio Connect folder
 rsconnect/
-
 # CUSTOM
 swg-23-restoration.Rproj
 **/.DS_Store
@@ -42,7 +41,8 @@ swg-23-restoration.Rproj
 DS_Store
 /data
 **.html
-
+# stored file paths
+paths.json
 #Ignoring PDF folder as added to GitIgnore
 /data_pdfs
 
