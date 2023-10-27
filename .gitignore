@@ -33,7 +33,6 @@ docs/
 po/*~
 # RStudio Connect folder
 rsconnect/
-
 # CUSTOM
 swg-23-restoration.Rproj
 **/.DS_Store
@@ -42,3 +41,4 @@ swg-23-restoration.Rproj
 DS_Store
 /data
 **.html
+paths.json
