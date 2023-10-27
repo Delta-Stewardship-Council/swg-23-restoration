@@ -3,7 +3,11 @@
 
 ## Directories
 
-* ecoatlas - Contains scripts for accessing content on ecoatlas.org.
+* admin_files - Scripts to help administer github project. Not scripts for specific branches.
+
+* documentation - Documentation for the Restoration project.
+
+* webscrape - Contains scripts for scraping web pages.
 
 ## Workflow 
 
