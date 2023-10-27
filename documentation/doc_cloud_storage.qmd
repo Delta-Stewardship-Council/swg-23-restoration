@@ -3,3 +3,42 @@ title: "Documentation on Cloud Storage"
 author: "Kenji Tomari"
 format: html
 ---
+
+## Shared Data Storage
+
+To avoid storing data on the github repository, for the life of the project we can use Kenji's UC Davis Box account, which has unlimited storage space.
+
+At this point, all members of the team should have "editor" access to the "NCEAS - Restoration" directory.
+
+## Steps
+
+(@) Accept editor access to box.com account.
+
+(@) Install box client for your local machine.
+
+(@) Navigate to the `NCEAS - Restoration` > `data`. Copy the absolute path to this directory. In macOS you can type `command + ctrl + c`.
+
+(@) Now we're going to store this path as a JSON file. Go to Rstudio, install `install.packages('json')`. Now go to File > New File > Text File. Write the following into the file, except replace `YOUR_ABSOLUTE_PATH` with your path, and make sure there are quotation marks:
+
+```
+{
+"box_path":"YOUR_ABSOLUTE_PATH"
+}
+```
+
+Save this file as `paths.json` to your main working directory. A `.gitignore` is already set up so this isn't uploaded to github.
+
+(@) Whenever you want to access a file, you can run:
+
+```
+path_to_data <- jsonlite::read_json("paths.json")$box_path
+# Access files
+list.files(
+  file.path(
+    path_to_data,
+    "input_files"
+  )
+)
+```
+
+Loading this path is now automated in `admin_files/load_paths.R`
