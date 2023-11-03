@@ -45,4 +45,6 @@ DS_Store
 paths.json
 #Ignoring PDF folder as added to GitIgnore
 /data_pdfs
+**/scratch*
+**/archived
 
