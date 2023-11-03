@@ -1,0 +1,327 @@
+---
+title: "CNRA Scraping Guide"
+author: "Kenji Tomari"
+date: today
+# by default, lets not execute any of the code.
+execute:
+  eval: false
+format:
+  html:
+    number-sections: true
+    embed-resources: true
+    # by default, fold the code chunks.
+    code-fold: false
+    code-summary: "Display code."
+    toc: true
+    toc-location: right
+    toc-depth: 4
+---
+
+## Introduction
+
+The CNRA Bond Accountability webpages contain a lot of information that requires bespoke webscraping and organizing tools. We'll go through the two types of pages in the following sections, Programs and Projects.
+
+## Code Setup
+
+```{r}
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Libraries
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+library(tidyverse)
+library(readxl)
+library(digest)
+# wrangling spatial data
+library(sf)
+# accessing REST API
+# https://httr2.r-lib.org
+library(httr2)
+# scraping, but with manners.
+library(polite)
+# data format wrangling
+library(jsonlite)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Paths
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Creates file.paths.
+# home directory: swg-23-restoration
+source(file.path("admin_scripts/init_load_paths.R"))
+
+path_to_input <- file.path(path_to_data, "input_files")
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Load functions
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+source(file.path(path_to_home, "web_scrape", "funs_scraping.R"))
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Create directories.
+# Make sure all the paths exist
+if(!dir.exists(path_to_input)){
+  print("Creating path to data.")
+  dir.create(path_to_input)
+}
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# load xlsx of links
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+meta <- read_xlsx(
+  file.path(
+    path_to_input, 
+    "Funding Programs and Contacts.xlsx")
+  ) %>%
+  # remove NA links
+  filter(!is.na(`Bond Accountability link`))
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Constants
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# as many of the links are relative links, store base url.
+base_url <- "https://bondaccountability.resources.ca.gov"
+```
+
+## Demo Data
+
+```{r}
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Download a program page as an example.
+prog <- "https://bondaccountability.resources.ca.gov/P1Program.aspx?ProgramAllocationPK=587&Program=Ecosystem,%20Watershed%20Protection%20and%20Restoration&ProgramPK=441&PropositionPK=48"
+
+# This is a function of {polite} to get the robots.txt.
+session <- bow(prog)
+
+# This uses the settings devised by robots.txt
+prog <- nod(session, prog) %>%
+  scrape()
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Download a project page as an example.
+proj <- "https://bondaccountability.resources.ca.gov/Project.aspx?ProjectPK=27041&PropositionPK=48"
+
+# This is a function of {polite} to get the robots.txt.
+session <- bow(proj)
+
+# This uses the settings devised by robots.txt
+proj <- nod(session, proj) %>%
+  scrape()
+```
+
+## Programs
+
+These pages contain information about the program's funding source, sub-program, agency, and a link to a guideline file. It also contains a list of links to projects.
+
+We can identify useful program information by first locating objects with the class `container_style_a`. In the chunk below, we isolate this class. It yields only one object (determined by `length()`), and we extract useful information on the elements directly below the root node (ie. `container_style_a`).
+
+```{r}
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Navigating Program Page
+# The class container_style_a seems to be universally applicable to programs 
+# and projects.
+roots_prog <- prog %>%
+  html_elements(".container_style_a")
+
+# Extract information on the direct children of the root element.
+# This is purely supplemental to help you get an idea of what's in there.
+fn_children_info(roots_prog)
+```
+### Get Strong Text
+
+Obtain the primary program information by extract the `<strong>` text.
+
+```{r}
+tb_strong <- fn_strong_text(roots_prog,
+                            "#ContentPlaceHolder1_ProgramView")
+tb_strong
+```
+
+### Description
+
+Nothing here of value. It simply contains `[1] "Description (click to expand)"`.
+
+```{r}
+roots_prog %>%
+  html_element("#ctl00_ContentPlaceHolder1_PanelBar") %>%
+  html_text2()
+```
+### Program Projects List
+
+```{r}
+rows <- roots_prog %>%
+  html_element("#ctl00_ContentPlaceHolder1_ProjectGrid") %>%
+  html_element("tbody") %>%
+  html_elements("tr")
+
+map_dfr(seq_along(rows), function(i){
+  item <- rows[i] %>%
+    html_elements("a")
+  
+  # return
+  tibble(
+    title = item %>%
+      html_attr("title"),
+    href = item %>%
+      html_attr("href")
+  )
+})
+
+```
+
+## Project
+
+```{r}
+cnra_project_id <- proj %>%
+  html_elements("#form1") %>%
+  html_attr("action") %>%
+  str_extract(., "(?<=ProjectPK\\=)\\d+")
+```
+
+
+```{r}
+roots_proj <- proj %>%
+  # Note, by selecting this "class" of tags, we may end up with a 
+  # list of multiple tags using this class. This is, after all,
+  # the nature of css classes. As such, each element has to be treated
+  # as a separate object using something like lapply or map.
+  html_elements(".container_style_a")
+
+roots_proj
+```
+
+
+### Project Description
+
+
+```{r}
+roots_proj %>%
+  # html_element(".container_style_a") %>%
+  # html_element("#ProjectContent") %>%
+  html_element("#ContentPlaceHolder1_ProgramView") %>%
+  html_element("td")
+  
+
+fn_strong_text(roots_proj, "#ContentPlaceHolder1_ProgramView")
+
+```
+### Funding
+
+```{r}
+funding <- roots_proj %>%
+  html_element("#ctl00_ContentPlaceHolder1_FundingGrid_ctl00")
+
+funding[!is.na(funding)] %>%
+  html_table()
+```
+
+### Project Metric
+
+```{r}
+metric <- roots_proj %>%
+  html_element("#ctl00_ContentPlaceHolder1_MetricsGrid_ctl00")
+
+metric[!is.na(metric)]  %>%
+  html_table()
+```
+### Water Plan Action Target
+
+```{r}
+wpat <- roots_proj %>%
+  html_element("#ctl00_ContentPlaceHolder1_WAPGrid_ctl00")
+
+wpat_cells <- wpat[!is.na(wpat)] %>%
+  html_elements("td")
+
+map_dfr(seq_along(wpat_cells), function(i){
+  child <- wpat_cells[i] %>%
+    html_children()
+  
+  if(length(child) > 0){
+    out <- child %>%
+      fn_1tag_extract()
+  } else {
+    out <- wpat_cells[i] %>%
+      fn_1tag_extract()
+  }
+  out %>%
+    mutate(item = i) %>%
+    select(item, everything())
+})
+
+```
+
+### Location
+
+This method of extracting spatial data is derived from examining the 'Network' information from the project website[^json_method]. Specifically by examining the `GET` methods for the domain `gis.cnra.ca.gov` yields three types of (GEO)JSON requests based on three types of geometry, point (0), polylines (1), and polygons (2).
+
+[^json_method]: To get to this point, you need to first look at the project website using developer or inspector mode (usually F12), then selecting the 'Network' tab.
+
+Below we build a query that uses the esri REST api, but directed at the CNRA server. This uses the {polite} package so that we can respect robots.txt (the rules sites have about how to access their content through automated tools like webscraping). The example below is for one single geometry, polylines.
+
+:::{.callout-note}
+The version of {polite} used in this script uses {httr} and not {httr2}. Some of these functions may change if and when {polite} moves to the new version of {httr2}.
+:::
+
+```{r}
+# Which geometry type? 0, 1, or 2?
+layer <- "1"
+# Which CNRA project ID?
+# This is not necessarily the public-facing project identification number.
+# This is more likely the spatial database's ID value.
+# This number is visible in the URL of the page, but can also be found
+# through scraping by targeting #form1.
+id <- "27041"
+
+# This is the base query, to which we'll attach parameters.
+# This was base url is derived from examining Network traffic with a
+# web browser.
+url_base <- "https://gis.cnra.ca.gov/arcgis/rest/services/Economy/ABCRS/MapServer/{layer}/query"
+
+# This just slips the geometry type into the query.
+# In other words, it replaces {layer} with 1.
+current_url <- url_base %>%
+  str_glue()
+
+# This is a function of {polite} to get the robots.txt.
+session <- bow(current_url)
+
+# This uses the settings devised by robots.txt
+received <- nod(session, current_url) %>%
+  # This scrapes using the 'current_url', 
+  # but with the query parameters below.
+  scrape(
+    bow = .,
+    query = list(
+      # output file type.
+      f = "geojson",
+      # This identifies the project:
+      where = str_glue("ProjectNo_FK = {id}"),
+      returnGeometry = "true",
+      # spatialRel = "esriSpatialRelIntersects",
+      # Get all attributes.
+      outFields = "*"
+    ),
+    verbose = T
+  )
+
+# NOTE
+# `received` is a raw, hexadecimal input stream. In other words,
+# it is encoded. You have two options with encoded data, you can either
+# use writeBin(received, "data.geojson"), or convert within the 
+# R environment, which is what we do below.
+
+# Assuming 'received' contains the raw response from the server
+# Convert raw data to character string
+geojson_text <- rawToChar(received)
+
+# If the server sends a BOM (Byte Order Mark), 
+# you might need to remove it
+geojson_text <- gsub("\xEF\xBB\xBF", "", geojson_text)
+
+# Convert list/data frame to an sf object
+geojson_sf <- st_read(geojson_text, 
+                      quiet = TRUE, 
+                      stringsAsFactors = FALSE)
+```
+
+
+
+
