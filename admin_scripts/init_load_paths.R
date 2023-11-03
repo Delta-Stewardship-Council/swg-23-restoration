@@ -1,16 +1,31 @@
-# packages
-if(!("stringr" %in% .packages())){
-  library(stringr)
-}
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Load packages
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+walk(
+  .x = c(
+    "stringr",
+    "jsonlite"
+  ),
+  .f = function(x) {
+    if(!(x %in% .packages())){
+      print(paste0("Loading {", x, "}"))
+      library(x)
+    }
+  }
+)
 
-if(!("jsonlite" %in% .packages())){
-  library(jsonlite)
-}
-
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Creates file.paths.
-# home directory: swg-23-restoration
-path_to_home <- getwd() %>%
-  str_extract(., "(.+)((swg-23-restoration(?=\\/))|(swg-23-restoration$))")
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+if(!exists("path_home")){
+  # home directory: swg-23-restoration
+  print("Variable path_home created.")
+  path_home <- getwd() %>%
+    str_extract(., "(.+)((swg-23-restoration(?=\\/))|(swg-23-restoration$))")
+}
 
-path_to_data <- jsonlite::read_json("paths.json")$box_path
-
+if(!exists("path_data")){
+  # Path to cloud data
+  print("Variable path_data created.")
+  path_data <- jsonlite::read_json("paths.json")$box_path
+}
