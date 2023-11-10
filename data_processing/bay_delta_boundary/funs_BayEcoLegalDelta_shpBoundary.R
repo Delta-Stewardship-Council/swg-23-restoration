@@ -1,7 +1,7 @@
 # Title: bay-delta_merge_code
 # Author(s): Bailey D. Morrison
-# Contributor(s): Eric Holmes, Kenji M. Tomari
-# Date: Nov 7, 2023
+# Contributor(s): Eric Holmes, Kenji Tomari
+# Date: Nov 9, 2023
 
 # Bay-Delta Shapefile Merge Function --------------------------------------
 #' This function downloads spatial data necessary to create the Bay-Delta 
@@ -77,6 +77,7 @@ create_BayDelta_shp <- function(
     dsn = file.path(unzipped_paths$bay, "sfei_baylands_bndry.shp"), 
     quiet = TRUE)
   
+  print("As of testing date (2023-11-9), {sf} must be 1.0-15 or else st_cast on MULTISURFACE yields an error. The version on CRAN is behind. Install the new version of {sf} from github, remotes::install_github('r-spatial/sf').")
   eco <- sf::st_read(
     dsn = file.path(
       unzipped_paths$eco, 
