@@ -1,0 +1,145 @@
+---
+title: "Delta vulnerability map"
+author: "Eric"
+date: "2023-11-17"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: scroll
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(ggplot2)
+library(dplyr)
+library(leaflet) # interactive maps
+library(plotly) # interactive plots
+library(sf)
+library(tidycensus)
+library(htmltools)
+```
+
+```{r, echo = F, results = "hide"}
+
+rest_sites <- st_read("data/scraped_data/cnra/clean_data/projects_spatial.gpkg")
+rest_sites
+legal_eco <- st_read("data/bay_delta_boundary/bay-delta_LegalEco_boundary.shp")
+
+legal_eco_wgs84 <- st_transform(legal_eco, st_crs(rest_sites))
+sites_clip = st_intersection(rest_sites, legal_eco_wgs84)
+
+# add metadata to sites ---------------------------------------------------
+
+metric <- read.csv("data/scraped_data/cnra/clean_data/project_metric.csv")
+colpal <- colorFactor(palette = RColorBrewer::brewer.pal(8, "Set1"), domain = sites_clip$Project.Metric)
+
+sites_clip <- merge(sites_clip, metric, by.x = "ProjectNo_FK", by.y = "project_id", all.x = T)
+sites_clip$popup_text <- paste(paste("Project_id:", sites_clip$ProjectNo_FK), 
+                               paste("Type:", sites_clip$Project.Metric), 
+                               paste("Acres:", sites_clip$Quantity), sep = "<br>")
+
+# spatial join with SOVI metrics ------------------------------------------
+
+svi <- read_sf("data/delta_sovi/CA_SOVI_theme_1.shp") %>% 
+  select(c("AREA_SQMI", "E_TOTPOP", "RPL_THEME1", "RPL_THEME2", "RPL_THEME3", "RPL_THEME4", "RPL_THEMES"))
+
+## Get everything in the same coordinate reference system (WGS84 = '+init=EPSG:4326')
+# legal_eco_wgs <- st_transform(legal_eco, crs = st_crs(rest_sites))
+svi_wgs <- st_transform(svi, crs = st_crs(rest_sites))
+# frp_wgs <- st_transform(frp, crs = st_crs(rest_sites))
+
+##Temproary workaround: remove spherical geometry (should probably be using a projected CRS in the future)
+sf::sf_use_s2(FALSE)
+## Select census tracts that intersect with delta boundary
+svi_delta <- svi_wgs[lengths(st_intersects(svi_wgs, legal_eco_wgs84))>0,]
+
+## spatial join fish restoration projects and SVI datasets
+rest_svi_join <- st_join(sites_clip, svi_wgs, largest = T)
+
+## Remove sticky geometry to be able to run PCA
+rsj_num <- sf::st_drop_geometry(rest_svi_join[,c("AREA_SQMI", "E_TOTPOP", "RPL_THEME1", "RPL_THEME2", "RPL_THEME3", "RPL_THEME4", "RPL_THEMES")])
+rsj_num <- rsj_num[complete.cases(rsj_num),]
+
+rsj_pca <- prcomp(rsj_num, scale. = TRUE)
+
+
+```
+
+Row {data-height=500}
+-------------------------------------
+
+### Map
+```{r}
+pal.themes <- colorNumeric(
+  palette = c("darkgreen","lemonchiffon", "brown"),
+  domain = c(-1,1))
+
+leaflet() %>%
+  addProviderTiles(providers$CartoDB.Positron, group = "Grey background") %>%
+  addProviderTiles("Esri.WorldImagery", group = "Imagery") %>% 
+  
+  addPolygons(data = svi_delta, 
+              group = "Median age", 
+              color = ~pal.themes(RPL_THEME1), 
+              fillColor = ~pal.themes(RPL_THEME1), 
+              weight = 1, fillOpacity = .8) %>%  
+  addPolygons(data = legal_eco_wgs84, color = "black", 
+              fillOpacity = 0, weight = 1) %>% 
+  addCircleMarkers(data = sites_clip,
+                   radius = ~log(Quantity),
+                   color = ~colpal(Project.Metric),
+                   opacity = .5,
+                   popup = ~popup_text) %>% 
+  addLayersControl(
+    baseGroups = c("Grey background", "Imagery"),
+    overlayGroups = c("Median income", "Median age"),
+    options = layersControlOptions(collapsed = FALSE))
+
+```
+Row {data-height = 500}
+-----------------------------------------------------
+```{r}
+benefits <- data.frame(SV = c(rep("Disadvantaged",6),rep("Non-disadvantaged",6)),
+                       variable = rep(c("Flood protection", "Education",
+                                        "Workforce Devlopment", "Recreation",
+                                        "Wildlife habitat", "Water quality"), 2, each = T),
+                       value = c(80, 60, 75, 60, 95, 45,
+                                 70, 80, 65, 61, 90, 60))
+
+plotly::ggplotly(ggplot(benefits, aes(x = variable, y = value, fill = SV)) + 
+                   geom_bar(stat = "identity", position = "dodge") + 
+                   coord_flip() +
+                   labs(y = "Score", x = NULL, title = "Benefits", 
+                        subtitle = "Data is fictional. Use for proof of concept only") +
+                   theme(legend.position = "bottom") + theme_bw())
+
+```
+
+```{r}
+set.seed(1)
+grants_ts <- data.frame(x = 1995:2021,
+                        y = runif(n = 27, min = 0, max = 100))
+
+plotly::ggplotly(ggplot(grants_ts, aes(x = x, y = y)) + geom_bar(stat = "identity") +
+  labs(x = "Year", y = "Project acreage/1000") + theme_bw())
+
+```
+
+
+Row {data-height = 500}
+-----------------------------------------------------------------------
+
+<!--When we use the orientation "rows" we specify each row using "Row".
+    To adjust the size of the row use the attribute {data-height=xxx}-->
+
+### PCA biplot
+
+```{r}
+biplot(rsj_pca)
+```
+
+### Corrplot
+
+```{r}
+corrplot::corrplot(cor(rsj_num), type = "upper", method = "number")
+```
