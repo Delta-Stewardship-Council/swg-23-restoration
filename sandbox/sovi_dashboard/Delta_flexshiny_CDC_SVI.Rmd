@@ -17,33 +17,79 @@ library(plotly) # interactive plots
 library(sf)
 library(tidycensus)
 library(htmltools)
+
+# Create reproducible path.
+source(file.path("admin_scripts", "init_load_paths.R"))
 ```
 
 ```{r, echo = F, results = "hide"}
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Load Data
+cnra_sites <- st_read(
+  file.path(path_data, 
+            "scraped_data/cnra/clean_data/projects_spatial.gpkg")
+)
 
-rest_sites <- st_read("data/scraped_data/cnra/clean_data/projects_spatial.gpkg")
-rest_sites
-legal_eco <- st_read("data/bay_delta_boundary/bay-delta_LegalEco_boundary.shp")
+legal_eco <- st_read(
+  file.path(path_data,
+            "bay_delta_boundary/Bay_EcoLegalDelta.shp")
+)
 
-legal_eco_wgs84 <- st_transform(legal_eco, st_crs(rest_sites))
-sites_clip = st_intersection(rest_sites, legal_eco_wgs84)
+# Convert Coordinate Reference System so they match.
+legal_eco_wgs84 <- st_transform(legal_eco, st_crs(cnra_sites))
 
-# add metadata to sites ---------------------------------------------------
+# Clip project sites
+sites_clip <- st_intersection(cnra_sites, legal_eco_wgs84)
 
-metric <- read.csv("data/scraped_data/cnra/clean_data/project_metric.csv")
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# add metadata on metrics to sites
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+metric <- read.csv(
+  file.path(
+    path_data,
+    "scraped_data/cnra/clean_data/project_metric.csv"
+  )
+)
+
+# Create a color palette each project metric.
 colpal <- colorFactor(palette = RColorBrewer::brewer.pal(8, "Set1"), domain = sites_clip$Project.Metric)
 
-sites_clip <- merge(sites_clip, metric, by.x = "ProjectNo_FK", by.y = "project_id", all.x = T)
-sites_clip$popup_text <- paste(paste("Project_id:", sites_clip$ProjectNo_FK), 
-                               paste("Type:", sites_clip$Project.Metric), 
-                               paste("Acres:", sites_clip$Quantity), sep = "<br>")
+# Perform merge of metadata to the project sites.
+sites_clip <- merge(sites_clip, 
+                    metric, 
+                    by.x = "ProjectNo_FK", 
+                    by.y = "project_id", 
+                    all.x = T)
 
-# spatial join with SOVI metrics ------------------------------------------
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Create pop up text.
+sites_clip$popup_text <-
+  paste(
+    paste("Project_id:", sites_clip$ProjectNo_FK),
+    paste("Type:", sites_clip$Project.Metric),
+    paste("Acres:", sites_clip$Quantity),
+    sep = "<br>"
+  )
 
-svi <- read_sf("data/delta_sovi/CA_SOVI_theme_1.shp") %>% 
-  select(c("AREA_SQMI", "E_TOTPOP", "RPL_THEME1", "RPL_THEME2", "RPL_THEME3", "RPL_THEME4", "RPL_THEMES"))
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# spatial join with SOVI metrics
+
+svi <- read_sf(
+  file.path(
+    path_data,
+    "delta_sovi/CA_SOVI_theme_1.shp"
+  )
+) %>% 
+  select("AREA_SQMI", 
+           "E_TOTPOP", 
+           "RPL_THEME1", 
+           "RPL_THEME2", 
+           "RPL_THEME3", 
+           "RPL_THEME4", 
+           "RPL_THEMES")
 
 ## Get everything in the same coordinate reference system (WGS84 = '+init=EPSG:4326')
+
 # legal_eco_wgs <- st_transform(legal_eco, crs = st_crs(rest_sites))
 svi_wgs <- st_transform(svi, crs = st_crs(rest_sites))
 # frp_wgs <- st_transform(frp, crs = st_crs(rest_sites))
@@ -61,8 +107,6 @@ rsj_num <- sf::st_drop_geometry(rest_svi_join[,c("AREA_SQMI", "E_TOTPOP", "RPL_T
 rsj_num <- rsj_num[complete.cases(rsj_num),]
 
 rsj_pca <- prcomp(rsj_num, scale. = TRUE)
-
-
 ```
 
 Row {data-height=500}
