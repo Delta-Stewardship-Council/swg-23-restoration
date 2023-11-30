@@ -1,18 +1,19 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Load packages
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-walk(
-  .x = c(
+lapply(
+  X = c(
     "stringr",
     "jsonlite"
   ),
-  .f = function(x) {
+  FUN = function(x) {
     if(!(x %in% .packages())){
       print(paste0("Loading {", x, "}"))
-      library(x)
+      library(x, character.only = T)
     }
   }
-)
+) |>
+  invisible()
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Creates file.paths.
