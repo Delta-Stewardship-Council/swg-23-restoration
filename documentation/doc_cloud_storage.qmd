@@ -1,7 +1,12 @@
 ---
 title: "Documentation on Cloud Storage"
 author: "Kenji Tomari"
-format: html
+format: 
+  html:
+    code-line-numbers: true
+    number-sections: true
+    embed-resources: true
+
 ---
 
 ## Shared Data Storage
