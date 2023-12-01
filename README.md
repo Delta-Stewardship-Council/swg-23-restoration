@@ -3,13 +3,13 @@
 
 ## Directories
 
-* admin_files - Scripts to help administer github project. Not scripts for specific branches.
+* admin_files - Scripts to help administer github project. Not scripts for specific tasks/sub-projects.
 
-* documentation - Documentation for the Restoration project.
+* documentation - Documentation for the Restoration Group project.
 
 * data_processing - This directory contains code for the download and manipulation of data for the purposes of this project. It does not contain the data itself.
 
-* sandbox - Demonstrative, sample, or experimental scripts relevant to the project. These scripts may or may not be incomplete, but have not been fully incorporated into a completed task/issue for the project. In other words, these scripts are at a "proposal stage."
+* sandbox - Demonstrative, sample, or experimental scripts relevant to the project. These scripts may or may not be complete, but have not been fully incorporated into a completed task/issue for the project. In other words, these scripts are at a "proposal stage."
 
 ## Workflow & Organization
 
