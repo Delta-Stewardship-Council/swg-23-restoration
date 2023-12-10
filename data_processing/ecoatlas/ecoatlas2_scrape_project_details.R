@@ -47,9 +47,13 @@ listings <- read_csv(file.path(path_listings, "bay_delta_plus_project_listings.c
 ids <- listings$projectid %>%
   unique()
 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # REST api execution
-jsons <- get_projs(
+# Caution, this could take 45 minutes.
+get_projs(
     .ids = ids,
     .dir = path_json,
-    .agent = "NCEAS Restoration Group"
-)
+    .agent = "NCEAS Restoration Group",
+    .return = F
+) |>
+  invisible()
