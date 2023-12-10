@@ -94,10 +94,13 @@ get_listings <- function(
 #' @param .ids numeric, vector of project ID numbers.
 #' @param .dir character, output directory.
 #' @param .agent character, your name or org's name.
+#' @param .return logical, if true, will return a (large) list.
+#' @return either NULL or a large list.
 get_projs <- function(
     .ids,
     .dir,
-    .agent = "NA"
+    .agent = "NA",
+    .return = F
 ){
   # load libraries
   load_libs(c("jsonlite", "tidyverse", "httr2"))
@@ -155,12 +158,20 @@ get_projs <- function(
     )
     
     # return
-    resp_json
+    if(.return == T){
+      resp_json
+    } else {
+      NULL
+    }
   },
   .progress = T)
   
   message("Scraping project details complete.")
   
   # return
-  jsons
+  if(.return == T){
+    jsons
+  } else {
+    NULL
+  }
 }
