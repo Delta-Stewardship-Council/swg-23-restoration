@@ -1,0 +1,153 @@
+﻿TypeKey,TypeName,key,name,Download?
+adminregion,Administrative Regions,CDFW,California Department of Fish and Wildlife,T
+adminregion,Administrative Regions,CDFW7,California Department of Fish and Wildlife (Region 7) ,F
+adminregion,Administrative Regions,OPC,California Ocean Protection Council,T
+adminregion,Administrative Regions,CSP,California State Parks,T
+adminregion,Administrative Regions,CC,Central Coast Region,F
+adminregion,Administrative Regions,CVJV,Central Valley Joint Venture,T
+adminregion,Administrative Regions,KTAP,Klamath Tracking and Accounting Program,F
+adminregion,Administrative Regions,LRWQCB,Lahontan Regional Water Quality Control Board,F
+adminregion,Administrative Regions,MVCACCR,Mosquito and Vector Control Asscociation of California Coastal Region,F
+adminregion,Administrative Regions,NOAA,National Oceanic and Atmospheric Administration,T
+adminregion,Administrative Regions,NRG,Natural Resources Group,T
+adminregion,Administrative Regions,NCRWQCB,North Coast Regional Water Quality Control Board,F
+adminregion,Administrative Regions,Delta,Sacramento-San Joaquin Delta and Suisun Marsh,T
+adminregion,Administrative Regions,DeltaProp1,Sacramento-San Joaquin Delta and Suisun Marsh (Prop 1),T
+adminregion,Administrative Regions,SDRWQCB,San Diego Regional Water Quality Control Board,F
+adminregion,Administrative Regions,SFBA,San Francisco Bay Adaptation,T
+adminregion,Administrative Regions,SFBJV,San Francisco Bay Joint Venture,T
+adminregion,Administrative Regions,SFBRWQCB,San Francisco Bay Regional Water Quality Control Board,T
+adminregion,Administrative Regions,SFEI,San Francisco Estuary Institute (for testing purposes only),T
+adminregion,Administrative Regions,SCVHA,Santa Clara Valley Habitat Agency,T
+adminregion,Administrative Regions,SCVWD,Santa Clara Valley Water District,T
+adminregion,Administrative Regions,SMP,Sierra Meadows Partnership,F
+adminregion,Administrative Regions,Sonoma,Sonoma County,T
+adminregion,Administrative Regions,SCR,South Coast Regional Boards,F
+adminregion,Administrative Regions,WRP,Southern California Wetland Recovery Project,F
+adminregion,Administrative Regions,SCC,State Coastal Conservancy,T
+adminregion,Administrative Regions,SWRCB,State Water Resources Control Board,T
+adminregion,Administrative Regions,UBP,Unspecified Baywide Projects,T
+adminregion,Administrative Regions,USACE,US Army Corps of Engineers,T
+adminregion,Administrative Regions,VNLC,Vollmar Natural Lands Consulting,T
+adminregion,Administrative Regions,WCB,Wildlife Conservation Board,T
+ecoregion,Ecoregions,bay-delta,Bay/Delta,T
+ecoregion,Ecoregions,central-coast,Central Coast,F
+ecoregion,Ecoregions,colorado-desert,Colorado Desert,F
+ecoregion,Ecoregions,klamath-north-coast,Klamath/North Coast,F
+ecoregion,Ecoregions,modoc,Modoc,F
+ecoregion,Ecoregions,mojave,Mojave,F
+ecoregion,Ecoregions,sacramento-valley,Sacramento Valley,T
+ecoregion,Ecoregions,san-joaquin-valley,San Joaquin Valley,T
+ecoregion,Ecoregions,sierra,Sierra,F
+ecoregion,Ecoregions,south-coast,South Coast,F
+group,Groups,135,Agua Fria Conservation Bank,F
+group,Groups,223,Alkali Sink Conservation Bank,F
+group,Groups,263,Allensworth Conservation Bank,F
+group,Groups,280,Alton North Conservation Bank,T
+group,Groups,166,Alton South Conservation Bank,T
+group,Groups,208,Anaheim Bay - Port of Long Beach,F
+group,Groups,211,Bullock Bend Mitigation Bank,T
+group,Groups,290,Burdell Ranch Mitigation Bank,T
+group,Groups,103,Caltrans 401 Projects,T
+group,Groups,73,CDFW Priority Unscreened Diversion,T
+group,Groups,70,CDFW Prop 1,T
+group,Groups,93,Central Valley Joint Venture,T
+group,Groups,312,COL: Stream Maintenance Program,F
+group,Groups,164,Cornerstones (Phase IV) - San Vicente Reservoir,F
+group,Groups,282,Cosumnes Floodplain Mitigation Bank,T
+group,Groups,273,Cottonwood Creek Mitigation Bank,F
+group,Groups,308,Creek Lands Conservation,F
+group,Groups,64,DeltaView,T
+group,Groups,65,EcoRestore,T
+group,Groups,22,Education/Outreach,T
+group,Groups,104,Eelgrass Mitigation Projects,F
+group,Groups,119,FEMA 2019,T
+group,Groups,205,Gill Ranch Conservation Bank,T
+group,Groups,24,Grasslands Ecological Area,F
+group,Groups,131,Hale Mitigation Bank,T
+group,Groups,310,Humboldt Bay Estuary Enhancement,F
+group,Groups,188,Kimball Island Mitigation Bank,T
+group,Groups,68,KTAP Reporting Zone 13 - Scott,F
+group,Groups,69,KTAP Reporting Zone 14 - Shasta,F
+group,Groups,74,KTAP Reporting Zone 1a - Lower North Fork,F
+group,Groups,75,KTAP Reporting Zone 1b - Lower South Fork,F
+group,Groups,76,KTAP Reporting Zone 1d - Middle Sprague,F
+group,Groups,77,KTAP Reporting Zone 1e - Sprague-Sycan,F
+group,Groups,78,KTAP Reporting Zone 1h - Upper North Fork,F
+group,Groups,79,KTAP Reporting Zone 2 - Williamson,F
+group,Groups,81,KTAP Reporting Zone 3a - Wood River above RM7,F
+group,Groups,80,KTAP Reporting Zone 3 - Wood River,F
+group,Groups,82,KTAP Reporting Zone 4 - Upper Klamath Lake,F
+group,Groups,83,KTAP Reporting Zone 6 - Lost,F
+group,Groups,84,KTAP Reporting Zone 7 - Upper Klamath,F
+group,Groups,85,KTAP Reporting Zone 8 - Mid Klamath,F
+group,Groups,284,Liberty Island Conservation Bank,T
+group,Groups,220,Markham Ravine,F
+group,Groups,177,Meridian Ranch Mitigation Bank,F
+group,Groups,270,Mojave River Watershed Mitigation Bank,F
+group,Groups,106,Moro Cojo Slough Management and Enhancement Plan,F
+group,Groups,158,Mountain House Conservation Bank,T
+group,Groups,120,Muzzy Ranch Conservation Bank,T
+group,Groups,25,NAWCA,T
+group,Groups,210,Noonan Ranch Conservation Bank,T
+group,Groups,92,North Coast Region 2017 Emergency Fire Response Projects,F
+group,Groups,198,North Delta Fish Conservation Bank,T
+group,Groups,309,Novato Baylands,T
+group,Groups,304,Novato Creek Flood Control Project,T
+group,Groups,26,NRCS - WRE/WRP,T
+group,Groups,28,NWR - Colusa,F
+group,Groups,29,NWR - Delevan,F
+group,Groups,30,NWR - Kesterson,F
+group,Groups,33,NWR K - Kern,F
+group,Groups,34,NWR K - Pixley,F
+group,Groups,31,NWR - Merced,F
+group,Groups,35,NWR Sac - Sacramento,T
+group,Groups,36,NWR Sac - Sacramento River,T
+group,Groups,37,NWR Sac - Sutter,T
+group,Groups,38,NWR SL - San Joaquin River,T
+group,Groups,39,NWR SL - San Luis,F
+group,Groups,32,NWR - Stone Lakes,T
+group,Groups,129,Petersen Ranch Mitigation Bank,T
+group,Groups,62,Ross Valley Watershed Program,T
+group,Groups,303,San Francisco Bay Adaptation,T
+group,Groups,94,San Francisco Bay Joint Venture Project Tours,T
+group,Groups,63,San Francisco Bay Restoration Authority (Eligible),T
+group,Groups,102,San Francisco Bay Restoration Authority (Funded),T
+group,Groups,301,San Pablo Bayland Collaborative Protection and Restoration (CPR) Project,T
+group,Groups,305,SCVWD: Capital Improvement Program,T
+group,Groups,112,SCVWD: Expanded Floodplains,T
+group,Groups,111,SCVWD: Flood Risk Reduction,T
+group,Groups,306,SCVWD: Other Projects,T
+group,Groups,114,SCVWD: Resilient Habitats,T
+group,Groups,118,SCVWD: Stream Maintenance Program,T
+group,Groups,72,Sierra Meadows Partnership,F
+group,Groups,235,SMUD Nature Preserve Mitigation Bank,T
+group,Groups,8,South Bay Salt Ponds,T
+group,Groups,1,South Bay Salt Ponds: Acquisition,T
+group,Groups,6,South Bay Salt Ponds: Future Restoration/Enhancement,T
+group,Groups,2,South Bay Salt Ponds: Initial Stewardship Plan,T
+group,Groups,3,South Bay Salt Ponds: Phase 1,T
+group,Groups,4,South Bay Salt Ponds: Phase 2,T
+group,Groups,95,Southern California Wetlands Recovery Project,F
+group,Groups,66,SSJDC Prop 1,T
+group,Groups,302,USACE Compensatory Mitigation Sites,T
+group,Groups,42,WA - Grizzly Island,T
+group,Groups,44,WA - Los Banos,F
+group,Groups,47,WA - Volta ,F
+group,Groups,48,WA - Yolo Bypass,T
+group,Groups,57,WCA - Honcut Creek,F
+group,Groups,307,Wildlife Conservation Board,T
+group,Groups,107,Willits Bypass Project,F
+group,Groups,59,WMA - Grasslands,F
+group,Groups,60,WMA - North Central Valley,T
+group,Groups,61,WMA - Tulare Basin,F
+group,Groups,9,WMA - Willow Creek-Lurline,F
+waterboard,Water Board Regions,central-coast,Central Coast,F
+waterboard,Water Board Regions,central-valley,Central Valley,T
+waterboard,Water Board Regions,colorado-river,Colorado River,F
+waterboard,Water Board Regions,lahontan,Lahontan,F
+waterboard,Water Board Regions,los-angeles,Los Angeles,F
+waterboard,Water Board Regions,north-coast,North Coast,F
+waterboard,Water Board Regions,san-diego,San Diego,F
+waterboard,Water Board Regions,san-francisco-bay,San Francisco Bay,T
+waterboard,Water Board Regions,santa-ana,Santa Ana,F
