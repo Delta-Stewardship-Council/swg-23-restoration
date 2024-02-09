@@ -758,7 +758,7 @@ fn_simplify_list <- function(list_, root_nm = "root"){
       # One, unnamed list present.
       # Solution, skip this level.
       return(
-        fn_rename_list(
+        fn_simplify_list(
           list_ = unlist(list_, 
                          recursive = F),
           root_nm = root_nm)
@@ -834,13 +834,13 @@ fn_simplify_list <- function(list_, root_nm = "root"){
     # a. all lists
     # b. all tibbles/other-non-list-objs
     # c. a mix of a and b.
-    # And then apply fn_rename_list to the elements
+    # And then apply fn_simplify_list to the elements
     # that are themselves lists.
     
     # IF-1.2~~~~IF-1.2~~~~IF-1.2~~~~START
     if(all(cls == "list")){
       # a. all lists
-      list_ <- map(list_, fn_rename_list)
+      list_ <- map(list_, fn_simplify_list)
       
     } else if(all(cls != "list")){
       # b. all tibbles/other-non-list-objs
@@ -867,7 +867,7 @@ fn_simplify_list <- function(list_, root_nm = "root"){
            .y = seq_along(cls), 
            .f = function(cl, idx){
         if(cl == "list"){
-          fn_rename_list(
+          fn_simplify_list(
             list_[[idx]],
             names(list_[idx])
           )
