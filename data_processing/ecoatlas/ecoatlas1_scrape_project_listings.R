@@ -33,6 +33,14 @@ check_dir(path_ecodata)
 check_dir(path_listings)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Make a logger
+log_eco <- make_log(
+  .filepath = file.path(path_ecodata, "log.txt"),
+  .purpose = "Record of EcoAtlas Scrape",
+  .newfile = T
+)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Load query source list
 # This list contains all the ways to search ecoatlas, and should be
 # comprehensive.

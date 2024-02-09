@@ -40,12 +40,24 @@ path_json <- file.path(
 check_dir(path_details)
 check_dir(path_json)
 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Make a logger
+if(!exists("log_eco")){
+  log_eco <- make_log(
+    .filepath = file.path(path_ecodata, "log.txt"),
+    .purpose = "Record of EcoAtlas Scrape",
+    .newfile = F
+  )
+}
+
 # Load listing of projects
 listings <- read_csv(file.path(path_listings, "bay_delta_plus_project_listings.csv"))
 
 # get unique ids
 ids <- listings$projectid %>%
   unique()
+
+log_eco("Beginning download of project details.")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # REST api execution
@@ -57,3 +69,5 @@ get_projs(
     .return = F
 ) |>
   invisible()
+
+log_eco("Downloaded project details.")
