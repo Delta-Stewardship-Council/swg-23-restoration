@@ -1,0 +1,31 @@
+---
+title: "Intro to Grant Programs"
+format: html
+---
+
+## Discussion on Project Files
+
+```{r}
+#| echo: FALSE
+# Load path to cloud directory
+source("admin_scripts/init_load_paths.R")
+
+library(tidyverse)
+library(readxl)
+library(sf)
+
+# create path to grant program coordinates directory
+pth$gpc <- file.path(pth$data, "grant_program_coordinates")
+
+# raw data
+pth$raw <- file.path(pth$gpc, "raw")
+```
+
+## Directory Listing
+
+In this directory, you'll find the script `creating_spatial_db.R`. This takes the various data files in box > grant_program_coordinates, and creates a geopackage with layers corresponding to each dataset. The description of the files in this box directory is found in the README.md there.
+
+You'll also find the `spatial_filtering.R` script which yields a table that indicates which objects are within our spatial boundary.
+
+
+
