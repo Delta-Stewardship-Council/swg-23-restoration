@@ -10,9 +10,12 @@ format: html
 # Load path to cloud directory
 source("admin_scripts/init_load_paths.R")
 
-library(tidyverse)
-library(readxl)
-library(sf)
+# Load libraries
+load_libs(.libs = c(
+  "tidyverse",
+  "readxl",
+  "sf"
+))
 
 # create path to grant program coordinates directory
 pth$gpc <- file.path(pth$data, "grant_program_coordinates")
@@ -23,9 +26,13 @@ pth$raw <- file.path(pth$gpc, "raw")
 
 ## Directory Listing
 
-In this directory, you'll find the script `creating_spatial_db.R`. This takes the various data files in box > grant_program_coordinates, and creates a geopackage with layers corresponding to each dataset. The description of the files in this box directory is found in the README.md there.
+The description of the files in box > data > grant_program_coordinates > raw directory is found in the README.md there.
 
-You'll also find the `spatial_filtering.R` script which yields a table that indicates which objects are within our spatial boundary.
+In this directory, you'll find the script `gpc1_creating_spatial_db.R`. This takes the various raw data files, and creates a geopackage with layers corresponding to each dataset. 
+
+You'll also find the `gpc2_spatial_filtering.R` script which yields a table that indicates which objects are within our spatial boundary.
+
+The `gpc3_criteria.R` script filters all the data based on criteria we've outlined in an xlsx document.
 
 
 
