@@ -66,7 +66,7 @@ check_dir <- function(.path,
       ".\n"
     )
     
-    dir.create(.path)
+    dir.create(.path, recursive = T)
   } else {
     msg <- paste0(
       "Path, ",
@@ -83,6 +83,8 @@ check_dir <- function(.path,
 # Check for a directory, if not make it.
 check_dir(pth$data)
 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# load crs ----
 # Load NCEAS Restoration Group's Project Coordinate Reference System
 # This is the CRS used for all spatial geometries in this project.
 crs_ <- read_json("admin_scripts/project_crs.json", simplifyVector = T)
