@@ -56,3 +56,42 @@ sf::st_write(
                   "ustiger_project_data.gpkg"),
   layer = "counties"
 )
+
+co <- st_read(file.path(path_census,
+                  "ustiger_project_data.gpkg"))
+
+# Tract
+project_co <- co$COUNTYFP
+ca_tract <- tigris::tracts(state = "06", 
+                        county = project_co,
+                          year = 2021)
+sf::st_write(
+  obj = ca_tract,
+  dsn = file.path(path_census,
+                  "ustiger_project_data.gpkg"),
+  layer = "tracts2021"
+)
+
+# bg
+project_co <- co$COUNTYFP
+ca_bg <- tigris::block_groups(state = "06", 
+                                 county = project_co,
+                                 year = 2021)
+sf::st_write(
+  obj = ca_bg,
+  dsn = file.path(path_census,
+                  "ustiger_project_data.gpkg"),
+  layer = "blockgroup2021"
+)
+
+# block
+
+ca_b <- tigris::blocks(state = "06", 
+                        county = project_co,
+                        year = 2021)
+sf::st_write(
+  obj = ca_b,
+  dsn = file.path(path_census,
+                  "ustiger_project_data.gpkg"),
+  layer = "block2021"
+)
