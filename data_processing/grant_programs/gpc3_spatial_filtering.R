@@ -50,7 +50,7 @@ walk(lyrs_, function(lyr){
   # save ids
   write(
     sub_$nceas_id %>% unique(),
-    file = file.path(pth$gpc3, "summary.txt"),
+    file = file.path(pth$gpc3, "all_nceas_ids.txt"),
     append = T
   )
   
@@ -63,7 +63,7 @@ walk(lyrs_, function(lyr){
 })
 
 # load all ids
-summary <- readLines(con = file.path(pth$gpc3, "summary.txt"))
+summary <- readLines(con = file.path(pth$gpc3, "all_nceas_ids.txt"))
 
 # filter attribute tables based on spatial filter
 
