@@ -282,3 +282,7 @@ walk(ssjdc_layers, function(lyr){
   }
 })
 
+write_csv(
+  x = ssjdc_atts2,
+  file = file.path(pth$gpc2, "ssjdc_atts.csv")
+)

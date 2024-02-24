@@ -53,3 +53,12 @@ pth$gpc2_gpkg <- file.path(pth$gpc2, "gpc2_spatial.gpkg")
 
 # Create dir.
 check_dir(pth$gpc2)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# gpc3 script paths ----
+pth$gpc3 <- file.path(pth$itm, "gpc3")
+
+pth$gpc3_gpkg <- file.path(pth$gpc3, "gpc3_spatial.gpkg")
+
+# Create dir.
+check_dir(pth$gpc3)
