@@ -1,0 +1,229 @@
+---
+title: "April Data Check"
+author: "Kenji Tomari"
+format:
+  html:
+    page-layout: full
+    number-sections: true
+    embed-resources: true
+    toc: true
+    toc-location: body
+    toc-depth: 4
+---
+
+## Set up
+
+```{r}
+#| output: false
+library(tidyverse, quietly = TRUE)
+library(sf, quietly = TRUE)
+library(kableExtra, quietly = TRUE)
+library(DT, quietly = TRUE)
+library(leaflet, quietly = TRUE)
+
+# Get path to home.
+if(!exists("path_home")){
+  # home directory: swg-23-restoration
+  print("Variable path_home created.")
+  path_home <- getwd() %>%
+    str_extract(., "(.+)((swg-23-restoration(?=\\/))|(swg-23-restoration$))")
+}
+
+# load script to create file paths.
+source(file.path(path_home, "admin_scripts", "init_load_paths.R"))
+
+# Next i'm going to load some helper functions to deal with spatial data.
+source(file.path(path_home, 'data_processing/composite_data/funs_spatial.R'))
+```
+
+## Data Collections
+
+Below represent three pools of data: that which we secured via email from agencies, that which was scraped from EcoAtlas using their REST API, and that which was scraped from CNRA Bond Accountability.
+
+### Grant Program Coordinates
+
+"Grant Program Coordinates" are the data files procured from individual agencies by folks including Pascale, Alex, and Taylor. Using this as the starting point, I created a sort of directory that contains unique IDs for each project, and the coordinates. This table is loaded below.
+
+```{r}
+gpc <- readr::read_csv(
+  file = file.path(pth$data, 
+                   "composite_data/step1.csv"),
+  show_col_types = F)
+
+# spatialize gpc with custom function from funs_spatial.R
+gpc_sf <- coords_to_sf(gpc, crs_ = crs_$crs_epsg)
+
+DT::datatable(gpc, options = list(pageLength = 3))
+```
+
+I'll just create a quick map of the GPC.
+
+```{r}
+# here's our sample frame
+delta_bound <- sf::st_read(
+  dsn = file.path(pth$data, "bay_delta_boundary/Bay_EcoLegalDelta.shp"),
+  quiet = T
+) %>%
+  st_transform(crs = crs_$crs_epsg)
+
+# For a quicker map, I'm going to reduce the vertices.
+# Don't use this sf object for analysis!
+delta_bound2 <- delta_bound %>%
+  st_simplify(dTolerance = 500)
+```
+
+```{r}
+# Create a leaflet map
+m <- leaflet() %>% 
+  addTiles() %>%  # Add default OpenStreetMap tiles
+  addPolygons(data = delta_bound2 %>%
+                st_transform(crs = 4326), 
+              color = "blue", 
+              weight = 2, 
+              fillOpacity = 0) %>%  # Add the polygon with blue outline and no fill
+  addCircleMarkers(data = gpc_sf %>%
+                st_transform(crs = 4326), 
+                   radius = 5, 
+                   color = "red", 
+                   fill = TRUE, 
+                   fillColor = "red", 
+                   fillOpacity = 1,
+                popup = ~project_title)  # Add the points as red dots
+
+# Print the map
+m
+# # Quick map
+# ggplot2::ggplot() +
+#   ggplot2::geom_sf(data = delta_bound2,
+#                    fill = NA,
+#                    color = "blue") +
+#   ggplot2::geom_sf(data = gpc_sf,
+#                    color = "red")
+```
+
+### EcoAtlas
+
+I scraped EcoAtlas a while ago. I cast a wide net (as I recall). Most of the key attributes are here: `scraped_data/ecoatlas/project_details/deliverables/project_info_only.csv`. With that said, there are a number of attributes with the EcoAtlas, and each project has a varying collection of these attributes. For instance, funding information is not available for all projects. I cannot be certain, but if I recall correctly some of the data may still be in the raw json files and were never extracted into table. See here: `scraped_data/ecoatlas/project_details/raw_json_files`
+
+```{r}
+ea <- readr::read_csv(
+  file = file.path(pth$data, "scraped_data/ecoatlas/project_details/deliverables/project_info_only.csv"),
+  show_col_types = F
+)
+
+DT::datatable(ea, options = list(pageLength = 3))
+```
+
+### CNRA Bond Accountability
+
+Again, I scraped this data a while ago, so my memory is a little fuzzy on this. (Note, the website actually changed since I scraped it, so the code in our github no longer works! The main thing that would need to change are the CSS id's and classes.) The raw data is here: `scraped_data/cnra/raw_html`
+
+Also like the EcoAtlas data, there are lots of attributes. These attributes are split up over several csv files. Here I'll load the main key for all the projects.
+
+```{r}
+cnraba <- readr::read_csv(
+  file = file.path(pth$data,
+                   "scraped_data/cnra/clean_data/program_project_key.csv"),
+  show_col_types = F
+)
+
+DT::datatable(cnraba, options = list(pageLength = 3))
+```
+
+## Matching GPC to Scraped Data
+
+### EcoAtlas
+
+There are few matches on a simple table join. Here I use a `left_join` because I want to prioritize keeping gpc projects.
+
+```{r}
+gpc_vs_ea <- gpc %>%
+  left_join(y = ea,
+            by = c("project_title" = "projectname"))
+```
+
+We can take a look at how many GPC projects have a *direct* EcoAtlas analog (ie. they share identical project names).
+
+```{r}
+gpc_vs_ea %>%
+  # remove non-matched gpc rows
+  dplyr::filter(!is.na(projectid)) %>%
+  dplyr::pull(nceas_proj) %>%
+  unique() %>%
+  length()
+```
+
+And how many projects didn't match.
+
+```{r}
+gpc_vs_ea %>%
+  # remove matched gpc rows
+  dplyr::filter(is.na(projectid)) %>%
+  dplyr::pull(nceas_proj) %>%
+  unique() %>%
+  length()
+```
+
+### CNRA Bond Accountability
+
+Oddly enough, there are duplicate project names, even though they have unique `projectid` values. So we'll just remove duplicates for now to get a sense of how many projects match up.
+
+```{r}
+gpc_vs_cnraba <- gpc %>%
+  left_join(y = cnraba %>%
+              distinct(title, .keep_all = T),
+            by = c("project_title" = "title"))
+```
+
+Here are the matches
+
+```{r}
+gpc_vs_cnraba %>%
+  # remove non-matched gpc rows
+  dplyr::filter(!is.na(project_id)) %>%
+  dplyr::pull(nceas_proj) %>%
+  unique() %>%
+  length()
+```
+And here are the projects didn't match.
+
+```{r}
+gpc_vs_cnraba %>%
+  # remove matched gpc rows
+  dplyr::filter(is.na(project_id)) %>%
+  dplyr::pull(nceas_proj) %>%
+  unique() %>%
+  length()
+```
+
+<!-- ## Map -->
+
+<!-- ```{r} -->
+<!-- # cnra dsn -->
+<!-- cnra_dsn <- file.path(pth$data, "scraped_data/cnra/clean_data/projects_spatial.gpkg") -->
+
+<!-- # get cnra layers -->
+<!-- cnra_sf_lyrs <- st_layers( -->
+<!--   dsn = cnra_dsn -->
+<!-- ) -->
+
+<!-- # convert to points -->
+<!-- cnra_sf <- purrr::map_dfr(cnra_sf_lyrs$name, function(lyr){ -->
+<!--   obj <- st_read( -->
+<!--     dsn = cnra_dsn, -->
+<!--     layer = lyr -->
+<!--   ) -->
+
+<!--   # use custom fun to convert to coords -->
+<!--   if(lyr != "point"){ -->
+<!--     obj <- to_coords(obj) %>% -->
+<!--       coords_to_sf() -->
+<!--   } -->
+
+<!--   obj %>% -->
+<!--     mutate(across(where(~ !inherits(., "sfc")), as.character)) %>% -->
+<!--     st_transform(crs = 4326)  -->
+<!-- }) -->
+
+<!-- ``` -->
+
