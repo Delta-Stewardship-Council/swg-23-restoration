@@ -1,3 +1,17 @@
+# Copy and paste this bit of code into your document:
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Get path to home.
+if(!exists("path_home")){
+  # home directory: swg-23-restoration
+  print("Variable path_home created.")
+  path_home <- getwd() %>%
+    stringr::str_extract(., "(.+)((swg-23-restoration(?=\\/))|(swg-23-restoration$))")
+}
+
+# load script to create file paths.
+source(file.path(path_home, "admin_scripts", "init_load_paths.R"))
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Package Loading Function ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -24,20 +38,6 @@ load_libs(c("stringr", "jsonlite"))
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Creates File.paths ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# This is the old method, left in here until all code updated.
-if(!exists("path_home")){
-  # home directory: swg-23-restoration
-  print("Variable path_home created.")
-  path_home <- getwd() %>%
-    str_extract(., "(.+)((swg-23-restoration(?=\\/))|(swg-23-restoration$))")
-}
-
-if(!exists("path_data")){
-  # Path to cloud data
-  print("Variable path_data created.")
-  path_data <- jsonlite::read_json("paths.json")$box_path
-}
-
 # New method
 if(!exists("pth")){
   pth <- list()
@@ -46,7 +46,9 @@ if(!exists("pth")){
   pth$home <- getwd() %>%
     str_extract(., "(.+)((swg-23-restoration(?=\\/))|(swg-23-restoration$))")
   
-  pth$data <- jsonlite::read_json("paths.json")$box_path
+  pth$data <- jsonlite::read_json(
+    file.path(path_home, "paths.json")
+    )$box_path
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -59,6 +61,8 @@ if(!exists("pth")){
 #' @return NULL
 check_dir <- function(.path, 
                       .msg = T){
+  stopifnot(inherits(.path, "character"))
+  
   if(!dir.exists(.path)){
     msg <- paste0(
       "Creating directory for: ",
@@ -87,7 +91,10 @@ check_dir(pth$data)
 # load crs ----
 # Load NCEAS Restoration Group's Project Coordinate Reference System
 # This is the CRS used for all spatial geometries in this project.
-crs_ <- read_json("admin_scripts/project_crs.json", simplifyVector = T)
+crs_ <- read_json(
+  file.path(path_home,
+            "admin_scripts",
+            "project_crs.json"), simplifyVector = T)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Log File Function ----
