@@ -1,15 +1,15 @@
 # Copy and paste this bit of code into your document:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Get path to home.
-if(!exists("path_home")){
-  # home directory: swg-23-restoration
-  print("Variable path_home created.")
-  path_home <- getwd() %>%
-    stringr::str_extract(., "(.+)((swg-23-restoration(?=\\/))|(swg-23-restoration$))")
-}
-
-# load script to create file paths.
-source(file.path(path_home, "admin_scripts", "init_load_paths.R"))
+# # Get path to home.
+# if(!exists("path_home")){
+#   # home directory: swg-23-restoration
+#   print("Variable path_home created.")
+#   path_home <- getwd() %>%
+#     stringr::str_extract(., "(.+)((swg-23-restoration(?=\\/))|(swg-23-restoration$))")
+# }
+# 
+# # load script to create file paths.
+# source(file.path(path_home, "admin_scripts", "init_load_paths.R"))
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
