@@ -18,6 +18,14 @@ to_coords <- function(sf_obj){
       st_geometry() %>%
       st_coordinates()
     
+  } else if(identical(type_, "MULTIPOLYGON")){
+    centroids <- sf_obj %>%
+      st_make_valid() %>%
+      st_centroid()
+    
+    coords <- centroids %>%
+      st_geometry() %>%
+      st_coordinates()
   } else {
     # not a POINT obj
     coords <- sf_obj %>%
@@ -78,3 +86,4 @@ coords_to_sf <- function(tb, crs_ = 26910){
   # return
   sf_obj
 }
+
