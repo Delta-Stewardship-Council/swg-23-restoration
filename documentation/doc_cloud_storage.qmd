@@ -2,16 +2,29 @@
 title: "Documentation on Cloud Storage"
 author: "Kenji Tomari"
 format: 
-  html:
-    code-line-numbers: true
-    number-sections: true
-    embed-resources: true
+  typst:
+    toc: false
+    papersize: us-letter
+    colorlinks: true
+    monofont: Courier Prime
+    fontsize: 12pt
+    linestretch: 1.5
+    wrap: none
 
 ---
 
-## Shared Data Storage
+```{=typst}
+#set page("us-letter")
+```
+
+
+## Setting up Shared Data Storage
 
 To avoid storing data on the github repository, for the life of the project we can use Kenji's UC Davis Box account, which has unlimited storage space.
+
+:::{.callout-note}
+You only need to perform these actions once.
+:::
 
 At this point, all members of the team should have "editor" access to the "NCEAS - Restoration" directory.
 
@@ -31,13 +44,21 @@ At this point, all members of the team should have "editor" access to the "NCEAS
 }
 ```
 
-Save this file as `paths.json` to your main working directory. A `.gitignore` is already set up so this isn't uploaded to github.
+:::{.callout-note}
+I have not tested this code in Windows. I recommend you replace the backslashes `\` that usually appear in file paths with the UNIX style forward slash `/`.
+:::
+
+Save this file as `paths.json` to your main working directory (ie. the directory for `swg-23-restoration`). A `.gitignore` is already set up so this isn't uploaded to github when do a 'push'.
 
 (@) Whenever you want to access a file, you can run:
 
-```
+```{r}
+#| eval: false
+
+# Load path
 path_to_data <- jsonlite::read_json("paths.json")$box_path
-# Access files
+
+# Get a list of files
 list.files(
   file.path(
     path_to_data,
@@ -46,4 +67,42 @@ list.files(
 )
 ```
 
-Loading this path is now automated in `admin_files/load_paths.R`
+## Setting up your script
+
+If you're writing a new script, you can set it up a number of ways to access the Box data. In order to use it, you must first load the script `init_load_paths.R` which lives in `/admin_scripts` on our github. This chunk below is one way to do this.
+
+```{r}
+#| eval: false
+# Get path to home.
+if(!exists("path_home")){
+  # home directory: swg-23-restoration
+  path_home <- getwd() %>%
+    str_extract(., "(.+)((swg-23-restoration(?=\\/))|(swg-23-restoration$))")
+  print("Variable path_home created.")
+}
+
+# load script to create file paths.
+source(file.path(path_home, "admin_scripts", "init_load_paths.R"))
+```
+
+This script (`init_load_paths.R`) does the following things:
+
+* It creates a simple function `load_libs()` which takes a character vector and loads the library. Why not just run `library(tidyverse)` or something to that effect? It loads it silently, and if you have a long list of functions, you can just place them in a vector and run one function. It's not that important, but its there.
+* **Important**: It creates a `list()` object named `pth` which has the path to the box data folder, in `pth$data`.
+* It creates the `check_dir()` function, which takes a path to a file and checks if the directory exists. If not, it creates the directory. Either way, it informs you of its progress.
+* It creates the `make_log()` function. This function creates *another* function, which creates a log file for whatever project you're working on. Maybe you're running a long process manipulating spatial data and you want to keep track of progress, you can use `make_log` to create another function, eg `spatial_process_logger`, which you can then pepper throughout your algorithm.
+
+### Using `pth`
+
+Here is an example. This script reads a csv from the following file path: Box > data > composite_data > step1.csv.
+
+```{r}
+#| eval: false
+
+readr::read_csv(
+  file = file.path(pth$data, 
+                   "composite_data", 
+                   "step1.csv")
+)
+```
+
