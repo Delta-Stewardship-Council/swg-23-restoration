@@ -93,3 +93,37 @@ add_bbox_area_to_sf <- function(sf_object) {
   
   return(sf_object)
 }
+
+#' Recursively run compound filter through data for specific values.
+#' 
+#' @param dat is the data.frame being filtered
+#' @param crit is a data.frame containing two columns: variable and category, which is used to filter.
+#' @return dat is the filtered data.frame
+compound_filter <- function(dat, crit){
+  # input validation
+  stopifnot(inherits(dat, "data.frame"))
+  stopifnot(inherits(crit, "data.frame"))
+  
+  # get filter criteria
+  var_ <- crit$variable[1]
+  cats_ <- crit$category[1] %>%
+    str_split_1(pattern = "\\,\\s")
+  
+  # error check
+  stopifnot(var_ %in% names(dat))
+  
+  # run the filter
+  dat <- dat %>%
+    dplyr::filter(
+      !!rlang::sym(var_) %in% cats_
+    )
+  
+  # recursively apply function
+  if(nrow(crit) > 1){
+    dat <- compound_filter(dat = dat, 
+                           crit = crit[2:nrow(crit),])
+  }
+  
+  # return
+  dat
+}
