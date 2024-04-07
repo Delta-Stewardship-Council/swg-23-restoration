@@ -2,25 +2,36 @@
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Setup ----
+if(!exists("path_home")){
+  # home directory: swg-23-restoration
+  print("Variable path_home created.")
+  path_home <- getwd() %>%
+    stringr::str_extract(., "(.+)((swg-23-restoration(?=\\/))|(swg-23-restoration$))")
+}
+
 # load paths, crs, logger
-source("admin_scripts/init_load_paths.R")
+source(file.path(path_home, 
+                 "admin_scripts", 
+                 "init_load_paths.R"))
 
 # libraries
 load_libs(
   c(
     "tidyverse",
-    "sf",
-    "stringdist"
+    "sf"
   )
 )
 
 # other scripts
-source("data_processing/composite_data/funs_spatial.R")
+source(file.path(path_home,
+                 "data_processing", 
+                 "composite_data", 
+                 "funs_spatial.R"))
 
 # create file.path for new dir
 pth$cdat <- file.path(pth$data, "composite_data")
 
-# create file.path for grant program coordinates
+# create file.path for latest step of grant program coordinates
 pth$gpc <- file.path(pth$data, 
                      "grant_program_coordinates/intermediate_steps/gpc3")
 
@@ -34,9 +45,9 @@ sample_frame <- st_read(
 ) %>%
   st_transform(crs = crs_$crs_epsg)
 
-# For testing purposes only, simplify bay delta boundary
-simple_ <- sample_frame %>%
-  st_simplify(dTolerance = 1000)
+# # For testing purposes only, simplify bay delta boundary
+# simple_ <- sample_frame %>%
+#   st_simplify(dTolerance = 1000)
 
 # Create sample_frame with 5km buffer
 buffer <- sample_frame %>%
@@ -54,7 +65,7 @@ buffer <- sample_frame %>%
 # 1.A GPC Lon-Lat ----
 # We want to first derive the lon-lat centroid for all projects. 
 pth$gpc_sf <- file.path(pth$gpc, "gpc3_spatial.gpkg")
-lyrs <- st_layers(pth$gpc_sf )
+lyrs <- st_layers(pth$gpc_sf)
 
 coords_ <- purrr::map_dfr(.x = lyrs$name,
            .f = function(nm){
@@ -189,7 +200,7 @@ write_csv(
   )
 )
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# 2. Ecoatlas ----
+# 2. Ecoatlas ---
 # 
 # ecoa <- read_csv(
 #   file = file.path(
