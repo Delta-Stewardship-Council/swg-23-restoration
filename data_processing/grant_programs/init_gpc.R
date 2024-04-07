@@ -62,3 +62,9 @@ pth$gpc3_gpkg <- file.path(pth$gpc3, "gpc3_spatial.gpkg")
 
 # Create dir.
 check_dir(pth$gpc3)
+
+# load functions
+source(file.path(pth$home, 
+                 "data_processing", 
+                 "grant_programs",
+                 "funs_gpc.R"))
