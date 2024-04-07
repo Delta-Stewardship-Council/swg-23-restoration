@@ -1,6 +1,15 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Set up ----
-source(file.path("data_processing", 
+# Get path to home.
+if(!exists("path_home")){
+  # home directory: swg-23-restoration
+  print("Variable path_home created.")
+  path_home <- getwd() %>%
+    stringr::str_extract(., "(.+)((swg-23-restoration(?=\\/))|(swg-23-restoration$))")
+}
+
+source(file.path(path_home,
+                 "data_processing", 
                  "grant_programs", 
                  "init_gpc.R"))
 
@@ -23,16 +32,6 @@ baydelta_buffer$name <- "5km_buffer"
 
 baydelta_buffer <- baydelta_buffer %>%
   select(name)
-
-st_write(
-  obj = baydelta_buffer,
-  dsn = file.path(
-    pth$data,
-    "bay_delta_boundary",
-    "buffers2.gpkg"
-  ),
-  layer = "5km"
-)
 
 # get all project layers
 lyrs_ <- st_layers(pth$gpc2_gpkg)$name
