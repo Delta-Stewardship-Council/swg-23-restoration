@@ -4,7 +4,16 @@
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Set up ----
-source(file.path("data_processing", 
+# Get path to home.
+if(!exists("path_home")){
+  # home directory: swg-23-restoration
+  print("Variable path_home created.")
+  path_home <- getwd() %>%
+    stringr::str_extract(., "(.+)((swg-23-restoration(?=\\/))|(swg-23-restoration$))")
+}
+
+source(file.path(path_home,
+                 "data_processing", 
                  "grant_programs", 
                  "init_gpc.R"))
 
@@ -15,10 +24,10 @@ logger <- make_log(
 )
 
 crit <- read_xlsx(
-  path = file.path(pth$gpc, "filter_criteria_update_022224.xlsx"),
+  path = file.path(pth$gpc, 
+                   "filter_criteria_update_022224.xlsx"),
   sheet = 1
 )
-
 
 # A. cnra ----
 
@@ -50,27 +59,11 @@ sfbra_atts <- read_csv(file.path(pth$gpc1, "sfbra_atts.csv"))
 ## criteria ----
 
 sfbra_crit <- crit %>%
-  filter(str_detect(file, "sfbra")) %>%
-  group_split(variable)
+  filter(str_detect(file, "sfbra"))
 
 ## att filter ----
 
-sfbra_atts2 <- map(sfbra_crit, function(crit_){
-  var_ <- crit_$variable
-  cats_regex <- str_split_1(crit_$category, "\\,") %>%
-    str_trim() %>%
-    paste0(., collapse = "|") %>%
-    paste0("(", ., ")")
-  
-  sfbra_atts %>%
-    filter(str_detect(!!sym(var_), pattern = cats_regex))
-})
-  
-
-sfbra_atts2 <- sfbra_atts2 %>%
-  bind_rows() %>%
-  # remove duplicates (there may be many!)
-  filter(!duplicated(.))
+sfbra_atts2 <- compound_filter(sfbra_atts, sfbra_crit)
 
 ## spatial filter ----
 
@@ -111,26 +104,11 @@ cscc_atts <- read_csv(file.path(pth$gpc1, "cscc_atts.csv"))
 ## criteria ----
 
 cscc_crit <- crit %>%
-  filter(str_detect(file, "SCC")) %>%
-  group_split(variable)
+  filter(str_detect(file, "SCC"))
 
 ## att filter ----
 
-cscc_atts2 <- map(cscc_crit, function(crit_){
-  var_ <- crit_$variable
-  cats_regex <- str_split_1(crit_$category, "\\,") %>%
-    str_trim() %>%
-    paste0(., collapse = "|") %>%
-    paste0("(", ., ")")
-  
-  cscc_atts %>%
-    filter(str_detect(!!sym(var_), pattern = cats_regex))
-})
-
-cscc_atts2 <- cscc_atts2 %>%
-  bind_rows() %>%
-  # remove duplicates (there may be many!)
-  filter(!duplicated(.))
+cscc_atts2 <- compound_filter(cscc_atts, cscc_crit)
 
 ## spatial filter ----
 
@@ -171,26 +149,11 @@ cdfw_atts <- read_csv(file.path(pth$gpc1, "cdfw_atts.csv"))
 ## criteria ----
 
 cdfw_crit <- crit %>%
-  filter(str_detect(file, "CDFW")) %>%
-  group_split(variable)
+  filter(str_detect(file, "CDFW"))
 
 ## att filter ----
 
-cdfw_atts2 <- map(cdfw_crit, function(crit_){
-  var_ <- crit_$variable
-  cats_regex <- str_split_1(crit_$category, "\\,") %>%
-    str_trim() %>%
-    paste0(., collapse = "|") %>%
-    paste0("(", ., ")")
-  
-  cdfw_atts %>%
-    filter(str_detect(!!sym(var_), pattern = cats_regex))
-})
-
-cdfw_atts2 <- cdfw_atts2 %>%
-  bind_rows() %>%
-  # remove duplicates (there may be many!)
-  filter(!duplicated(.))
+cdfw_atts2 <- compound_filter(cdfw_atts, cdfw_crit)
 
 ## spatial filter ----
 
@@ -231,26 +194,11 @@ ssjdc_atts <- read_csv(file.path(pth$gpc1, "ssjdc_atts.csv"))
 ## criteria ----
 
 ssjdc_crit <- crit %>%
-  filter(str_detect(file, "ECP")) %>%
-  group_split(variable)
+  filter(str_detect(file, "ECP"))
 
 ## att filter ----
 
-ssjdc_atts2 <- map(ssjdc_crit, function(crit_){
-  var_ <- crit_$variable
-  cats_regex <- str_split_1(crit_$category, "\\,") %>%
-    str_trim() %>%
-    paste0(., collapse = "|") %>%
-    paste0("(", ., ")")
-  
-  ssjdc_atts %>%
-    filter(str_detect(!!sym(var_), pattern = cats_regex))
-})
-
-ssjdc_atts2 <- ssjdc_atts2 %>%
-  bind_rows() %>%
-  # remove duplicates (there may be many!)
-  filter(!duplicated(.))
+ssjdc_atts2 <- compound_filter(ssjdc_atts, ssjdc_crit)
 
 ## spatial filter ----
 
