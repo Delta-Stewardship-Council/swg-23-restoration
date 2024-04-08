@@ -76,10 +76,9 @@ delta_bound2 <- delta_bound %>%
   st_transform(crs = 4326)
 
 # Create a color palette with a color for each unique group in `popup_group`
-color_palette <- hcl.colors(n = gpc_sf$popup_grp %>% 
-                              unique() %>% 
-                              length(), 
-                            palette = "Zissou 1")
+
+# here is a color palette selectively chosen from "Classic Tableau" palette with openstreetmap colors in mind
+color_palette <- c("#FF7F0E", "#2CA02C", "#D62728", "#9467BD", "#8C564B")
 
 gpc_sf$color <- color_palette[as.factor(gpc_sf$popup_grp)]
 
