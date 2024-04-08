@@ -7,14 +7,17 @@ to_coords <- function(sf_obj){
   # input validation
   stopifnot(inherits(sf_obj, "sf"))
   
-  # first confirm type before proceeding.
+  # convert sf object to standard coords CRS 4326
+  sf_obj <- sf_obj %>%
+    st_transform(crs = 4326)
+  
+  # first get type before proceeding.
   type_ <- sf::st_geometry_type(sf_obj) %>%
     unique() %>%
     as.character()
   
   if(identical(type_, "POINT")){
     coords <- sf_obj %>%
-      st_transform(crs = 4326) %>%
       st_geometry() %>%
       st_coordinates()
     
@@ -29,7 +32,6 @@ to_coords <- function(sf_obj){
   } else {
     # not a POINT obj
     coords <- sf_obj %>%
-      st_transform(crs = 4326) %>%
       st_centroid() %>%
       st_geometry() %>%
       st_coordinates()
