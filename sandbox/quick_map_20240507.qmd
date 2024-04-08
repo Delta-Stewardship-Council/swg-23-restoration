@@ -1,6 +1,13 @@
 ---
 title: "Quick Map - April 2024"
-format: html
+format:
+  html:
+    number-sections: true
+    embed-resources: true
+    code-fold: true
+    toc: true
+    toc-location: right
+    toc-depth: 4
 ---
 
 ```{r}
