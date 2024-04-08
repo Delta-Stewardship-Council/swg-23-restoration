@@ -1,0 +1,97 @@
+---
+title: "Quick Map - April 2024"
+format: html
+---
+
+```{r}
+#| code-fold: true
+#| code-summary: setup
+#| output: false
+library(tidyverse, quietly = TRUE)
+library(sf, quietly = TRUE)
+library(kableExtra, quietly = TRUE)
+library(DT, quietly = TRUE)
+library(leaflet, quietly = TRUE)
+library(leaflet.extras, quietly = TRUE) # for fullscreen button
+library(RColorBrewer)
+
+# Get path to home.
+if(!exists("path_home")){
+  # home directory: swg-23-restoration
+  print("Variable path_home created.")
+  path_home <- getwd() %>%
+    str_extract(., "(.+)((swg-23-restoration(?=\\/))|(swg-23-restoration$))")
+}
+
+# load script to create file paths.
+source(file.path(path_home, "admin_scripts", "init_load_paths.R"))
+
+# Next i'm going to load some helper functions to deal with spatial data.
+source(file.path(path_home, 'data_processing/composite_data/funs_spatial.R'))
+```
+
+Below I load the "composite data" which is a sort of summary document, simply showing all the GPC in one spreadsheet with lat-lon coordinates. To find the more extensive attributes tables and spatial database (in this case .gpkg) go to Box > data > grant_program_coordinates > intermediate_steps > gpc3
+
+## Table
+
+```{r}
+#| code-fold: true
+#| code-summary: loads and show composite data step1.csv (which has lat-lon coords)
+gpc <- readr::read_csv(
+  file = file.path(pth$data, 
+                   "composite_data/step1.csv"),
+  show_col_types = F)
+
+# spatialize gpc with custom function from funs_spatial.R
+gpc_sf <- coords_to_sf(gpc, crs_ = 4326) %>%
+  mutate(popup_txt = paste0(nceas_proj, ": ", project_title)) %>%
+  mutate(popup_grp = stringr::str_extract(nceas_proj, "(?<=proj\\_)[[:alpha:]]+"))
+
+DT::datatable(gpc, options = list(pageLength = 3))
+```
+
+## Map
+
+```{r}
+#| code-fold: true
+#| code-summary: loads sample frame and leaflet map
+# here's our sample frame
+delta_bound <- sf::st_read(
+  dsn = file.path(pth$data, "bay_delta_boundary/Bay_EcoLegalDelta.shp"),
+  quiet = T
+) %>%
+  st_transform(crs = crs_$crs_epsg)
+
+# For a quicker map, I'm going to reduce the vertices.
+# Don't use this sf object for analysis!
+delta_bound2 <- delta_bound %>%
+  st_simplify(dTolerance = 500) %>%
+  st_transform(crs = 4326)
+
+# Create a color palette with a color for each unique group in `popup_group`
+color_palette <- hcl.colors(n = gpc_sf$popup_grp %>% 
+                              unique() %>% 
+                              length(), 
+                            palette = "Zissou 1")
+
+gpc_sf$color <- color_palette[as.factor(gpc_sf$popup_grp)]
+
+# Create a leaflet map
+m <- leaflet() %>% 
+  addTiles() %>%  # Add default OpenStreetMap tiles
+  addPolygons(data = delta_bound2, 
+              color = "blue", 
+              weight = 2, 
+              fillOpacity = 0) %>%  # Add the polygon with blue outline and no fill
+  addCircleMarkers(data = gpc_sf, 
+                   radius = 5, 
+                   color = ~color, 
+                   fill = TRUE, 
+                   fillColor = ~color,
+                   fillOpacity = 0.8,
+                popup = ~popup_txt) %>%  # Add the points as red dots
+  addFullscreenControl()
+
+# Print the map
+m
+```
