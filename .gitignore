@@ -40,6 +40,7 @@ swg-23-restoration.Rproj
 .DS_Store
 DS_Store
 /data
+/compare_proposals_result
 **.html
 !/documentation/*.html
 # stored file paths
