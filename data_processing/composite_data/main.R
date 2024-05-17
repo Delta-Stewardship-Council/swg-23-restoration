@@ -6,7 +6,14 @@ if(!exists("path_home")){
   # home directory: swg-23-restoration
   print("Variable path_home created.")
   path_home <- getwd() %>%
-    stringr::str_extract(., "(.+)((swg-23-restoration(?=\\/))|(swg-23-restoration$))")
+    stringr::str_extract(., "(.+)((swg-23-restoration(?=\\/))|(swg-23-restoration$))") %>%
+    stringr::str_split_1(., "\\/|\\\\{1,2}")
+  path_home <- file.path(
+    paste(
+      path_home,
+      collapse = .Platform$file.sep
+    )
+  )
 }
 
 # load paths, crs, logger
@@ -23,7 +30,7 @@ load_libs(
 )
 
 # other scripts
-source(file.path(path_home,
+source(file.path(pth$home,
                  "data_processing", 
                  "composite_data", 
                  "funs_spatial.R"))
@@ -41,7 +48,7 @@ check_dir(pth$cdat)
 # Load bay-delta sample frame
 sample_frame <- st_read(
   file.path(pth$data, 
-            "bay_delta_boundary/Bay_EcoLegalDelta.shp")
+            "bay_delta_boundary/StudyBoundaryFINAL.shp")
 ) %>%
   st_transform(crs = crs_$crs_epsg)
 
