@@ -5,7 +5,14 @@ if(!exists("path_home")){
   # home directory: swg-23-restoration
   print("Variable path_home created.")
   path_home <- getwd() %>%
-    stringr::str_extract(., "(.+)((swg-23-restoration(?=\\/))|(swg-23-restoration$))")
+    stringr::str_extract(., "(.+)((swg-23-restoration(?=\\/))|(swg-23-restoration$))") %>%
+    stringr::str_split_1(., "\\/|\\\\{1,2}")
+  path_home <- file.path(
+    paste(
+      path_home,
+      collapse = .Platform$file.sep
+    )
+  )
 }
 
 source(file.path(path_home,
@@ -23,7 +30,7 @@ baydelta <- st_read(
   dsn = file.path(
     pth$data,
     "bay_delta_boundary",
-    "Bay_EcoLegalDelta.shp"
+    "StudyBoundaryFINAL.shp"
 ))
 
 baydelta_buffer <- st_buffer(x = baydelta, dist = 5000)
