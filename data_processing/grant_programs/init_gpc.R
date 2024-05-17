@@ -3,7 +3,22 @@
 # directory further, read the readme, or start with `gpc1...R`
 
 # Load path to cloud directory
-source("admin_scripts/init_load_paths.R")
+if(!exists("path_home")){
+  # home directory: swg-23-restoration
+  print("Variable path_home created.")
+  path_home <- getwd() %>%
+    stringr::str_extract(., "(.+)((swg-23-restoration(?=\\/))|(swg-23-restoration$))") %>%
+    stringr::str_split_1(., "\\/|\\\\{1,2}")
+  path_home <- file.path(
+    paste(
+      path_home,
+      collapse = .Platform$file.sep
+    )
+  )
+}
+
+# load script to create file paths.
+source(file.path(path_home, "admin_scripts", "init_load_paths.R"))
 
 # Load libraries
 load_libs(.libs = c(
@@ -68,3 +83,4 @@ source(file.path(pth$home,
                  "data_processing", 
                  "grant_programs",
                  "funs_gpc.R"))
+
