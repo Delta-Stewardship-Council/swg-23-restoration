@@ -9,7 +9,14 @@ if(!exists("path_home")){
   # home directory: swg-23-restoration
   print("Variable path_home created.")
   path_home <- getwd() %>%
-    stringr::str_extract(., "(.+)((swg-23-restoration(?=\\/))|(swg-23-restoration$))")
+    stringr::str_extract(., "(.+)((swg-23-restoration(?=\\/))|(swg-23-restoration$))") %>%
+    stringr::str_split_1(., "\\/|\\\\{1,2}")
+  path_home <- file.path(
+    paste(
+      path_home,
+      collapse = .Platform$file.sep
+    )
+  )
 }
 
 source(file.path(path_home,
