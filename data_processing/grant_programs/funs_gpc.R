@@ -104,19 +104,34 @@ compound_filter <- function(dat, crit){
   stopifnot(inherits(dat, "data.frame"))
   stopifnot(inherits(crit, "data.frame"))
   
+  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # get filter criteria
+  # variable of interest
   var_ <- crit$variable[1]
+  # categories of interest
   cats_ <- crit$category[1] %>%
     str_split_1(pattern = "\\,\\s")
   
   # error check
   stopifnot(var_ %in% names(dat))
   
+  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # run the filter
   dat <- dat %>%
-    dplyr::filter(
-      !!rlang::sym(var_) %in% cats_
-    )
+    # First, split the variable of interest from comma separated values to
+    # a list-type column, containing a character vector for each observation.
+    dplyr::mutate(tmpvar = stringr::str_split(
+      !!rlang::sym(var_), 
+      "\\,\\s")) %>%
+    # Then, see if the categories of interest are present in the variable of
+    # interest.
+    dplyr::mutate(tmpvar = purrr::map(tmpvar, function(chr_){
+      T %in% (cats_ %in% chr_)
+    })) %>%
+    # filter out rows/observations without our cats of interest
+    dplyr::filter(tmpvar == T) %>%
+    # drop filtering column
+    dplyr::select(-tmpvar)
   
   # recursively apply function
   if(nrow(crit) > 1){
