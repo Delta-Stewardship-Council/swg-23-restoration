@@ -29,7 +29,7 @@ check <- tidy_stop_num_words %>%
   count(word, sort = TRUE)
 
 check  %>%
-  filter(n > 1000) %>%
+  filter(n > 10) %>%
   mutate(word = reorder(word, n)) %>%
   ggplot(aes(word, n)) +
   geom_col(fill = "darkred") +
